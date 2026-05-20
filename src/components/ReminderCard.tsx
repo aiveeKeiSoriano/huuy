@@ -1,0 +1,2 @@
+// ReminderCard component
+export {};

@@ -57,13 +57,19 @@ No `expo-notifications` and no `expo-task-manager` needed. Alarm triggering is h
 | `eslint-plugin-import` | Import ordering and resolution |
 | `eslint-plugin-react-native-a11y` | Accessibility rules for RN components |
 
-### Step 4 — Configure app.json Permissions
+### Step 4 — Configure Permissions
+> **Bare workflow note:** In a bare Expo project, `AndroidManifest.xml` is the source of truth — add permissions there directly. The `app.json` `permissions` array only applies when running `npx expo prebuild` and will not auto-sync to an existing `android/` directory.
+
+Permissions in `android/app/src/main/AndroidManifest.xml`:
 - `SCHEDULE_EXACT_ALARM` — required to call `setAlarmClock()`
-- `USE_EXACT_ALARM` — supplemental exact alarm permission (Android 13+)
+- `USE_EXACT_ALARM` — supplemental exact alarm permission (Android 13+); auto-granted for alarm/timer apps, not user-revocable
 - `RECEIVE_BOOT_COMPLETED` — reschedule alarms after phone restart
 - `WAKE_LOCK` — keep CPU alive when alarm fires
 - `USE_FULL_SCREEN_INTENT` — show alarm UI over the lock screen
-- `DISABLE_KEYGUARD` — dismiss lock screen when alarm fires
+- `INTERNET` — required by Expo; keep
+- `VIBRATE` — alarm vibration; keep
+
+> **`DISABLE_KEYGUARD` is not needed.** `AlarmActivity.kt` uses `setShowWhenLocked(true)` and `setTurnScreenOn(true)` (API 27+) — the modern replacement for lock screen dismissal. These are window flags set in `onCreate()` and require no permission.
 
 > **Android 14+ (API 34) note:** `SCHEDULE_EXACT_ALARM` is no longer automatically granted on Android 14+. On first alarm creation, check `AlarmManager.canScheduleExactAlarms()`. If it returns `false`, redirect the user to the system settings page via `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` so they can grant it manually. Without this grant, `setAlarmClock()` will throw a `SecurityException` and alarm creation will fail silently.
 
