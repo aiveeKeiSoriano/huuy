@@ -68,6 +68,8 @@ No `expo-notifications` and no `expo-task-manager` needed. Alarm triggering is h
 
 `appVersionSource: "remote"` means EAS owns the version counter — do not bump `versionCode` manually in `android/app/build.gradle`.
 
+> **Build architecture note:** The `preview` profile uses `gradleCommand: ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"` to build only the `arm64-v8a` ABI. This cuts `run gradlew` time by ~70% and is sufficient for internal testing on modern Android devices. **Before submitting to the Play Store (`production` profile), verify that `reactNativeArchitectures` in `android/gradle.properties` still includes all four targets (`armeabi-v7a,arm64-v8a,x86,x86_64`)** — the production profile does not override this and builds all ABIs as required for Play Store distribution.
+
 ### Step 4 — Configure Permissions
 > **Bare workflow note:** In a bare Expo project, `AndroidManifest.xml` is the source of truth — add permissions there directly. The `app.json` `permissions` array only applies when running `npx expo prebuild` and will not auto-sync to an existing `android/` directory.
 
@@ -144,7 +146,7 @@ Expo Router requires all routes to live in `app/`. Each file in `app/` is both a
 
 #### `app/index.tsx` — HomeScreen
 - Displays all reminders as a list of `ReminderCard` components
-- On app open, calls `storageService.getReminders()` which sets `missed_alarm = 1` in SQLite and returns reminders with `missedAlarm: true` for any reminder where `triggerTime < Date.now()`
+- On app open (and after any mutation), calls `loadRemindersAction()` — which first runs `markMissedAlarms()` then returns all reminders; this ensures `missedAlarm: true` is set for any reminder whose `triggerTime` has passed
 - Missed reminders remain in the list with `exclamation.svg` visible — user must manually trash them
 - When no reminders exist, shows faded centered text: **"wala langgg"**
 - FAB in the bottom right using `plus.svg` — navigates to CreateScreen with no params (`router.push('/create')`)
@@ -153,7 +155,7 @@ Expo Router requires all routes to live in `app/`. Each file in `app/` is both a
 ---
 
 #### `app/create.tsx` — CreateScreen
-- Input label reads: **"paalala mo nga sakin yung:"**
+- Input label reads: **"remind mo nga ako about sa:"**
 - Time picker using `@react-native-community/datetimepicker` — opens the native Android time picker dialog, calculates next occurrence of the selected time same as a standard alarm
 - Save button behavior:
   - `source=widget` — calls `createReminderAction` then `NavigationModule.goHome()` — sends app to background and returns user to phone home screen without closing the app
@@ -264,7 +266,8 @@ CREATE TABLE IF NOT EXISTS settings (
 `storageService` is the only layer that knows these column names. It maps snake_case columns to camelCase on every read and camelCase to snake_case on every write — no other layer ever sees `trigger_time` or `missed_alarm`.
 
 - `saveReminder(reminder)` — handles both insert and upsert of a reminder; maps `triggerTime` → `trigger_time` and `missedAlarm` → `missed_alarm`
-- `getReminders()` — fetches all reminders from SQLite, then for each reminder where `trigger_time < Date.now()` sets `missed_alarm = 1` and updates the row before returning — this is where missed alarm detection happens
+- `getReminders()` — fetches all reminders from SQLite ordered by `trigger_time ASC`; no missed alarm detection here — that is done separately via `markMissedAlarms()`
+- `markMissedAlarms()` — bulk UPDATE: sets `missed_alarm = 1` for every reminder where `trigger_time < Date.now() AND missed_alarm = 0`; called by `loadRemindersAction` before fetching
 - `getReminderById(id)` — fetch a single reminder by id — used by `app/create.tsx` in edit mode and `app/alarm.tsx` on load
 - `deleteReminder(id)` — remove by id
 - `snoozeReminder(id, newTriggerTime)` — updates `trigger_time` in SQLite and sets `missed_alarm = 0`
@@ -301,6 +304,13 @@ Used when user edits any reminder — including missed alarms. Handles full resc
 - Calls `storageService.deleteReminder()` — removes from SQLite
 - Removes entry from `SharedPreferences`
 - Used by both `app/index.tsx` (trash on `ReminderCard`) and `app/alarm.tsx` (trash button)
+
+#### `loadRemindersAction.ts`
+Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-step load:
+1. Calls `storageService.markMissedAlarms()` — bulk-flags any reminder whose `triggerTime` has passed
+2. Calls `storageService.getReminders()` — returns all reminders with up-to-date `missedAlarm` state
+
+> Keeping missed alarm detection out of `getReminders()` keeps the service as pure CRUD and lets `getReminders()` be called freely without side effects (e.g. from `alarm.tsx` or tests).
 
 #### `snoozeReminderAction.ts`
 - Receives only `reminderId` — fetches snooze duration internally via `storageService.getSettings()`
@@ -376,7 +386,7 @@ Huuy/
 ├── app/
 │   ├── _layout.tsx               # Root layout, deep link config, font loading, Expo Router entry
 │   ├── index.tsx                 # HomeScreen — "wala langgg", FAB, settings icon, ReminderCard list
-│   ├── create.tsx                # CreateScreen — "paalala mo nga sakin yung:", time picker, source param
+│   ├── create.tsx                # CreateScreen — "remind mo nga ako about sa:", time picker, source param
 │   ├── alarm.tsx                 # AlarmScreen — logo loading state, "huuuyyyy yung ano", title, snooze, trash
 │   └── settings.tsx              # SettingsScreen — snooze duration
 │
@@ -399,6 +409,7 @@ Huuy/
 │   │   └── ReminderCard.tsx      # "yung" label, title, time, exclamation.svg for missed, trash.svg and edit.svg
 │   │
 │   ├── actions/
+│   │   ├── loadRemindersAction.ts    # markMissedAlarms() then getReminders() — called by HomeScreen on mount and after mutations
 │   │   ├── createReminderAction.ts   # Generates UUID v4 id, coordinates save + schedule
 │   │   ├── editReminderAction.ts     # Guards against deleted reminder, cancel old + save updated + reschedule
 │   │   ├── deleteReminderAction.ts   # Coordinates cancel alarm + delete from storage
@@ -449,7 +460,7 @@ Huuy/
 |---|---|---|
 | 1 | User | Taps FAB on HomeScreen |
 | 2 | App | Calls `router.push('/create')` — no params needed |
-| 3 | User | Types in "paalala mo nga sakin yung:" input and selects time via native dialog |
+| 3 | User | Types in "remind mo nga ako about sa:" input and selects time via native dialog |
 | 4 | create.tsx | Validates: title not empty, trigger ≥ 5 min from now, no conflict with existing reminders |
 | 5 | createReminderAction | Generates UUID v4 as reminder `id` |
 | 6 | createReminderAction | Calls `storageService.saveReminder()` — persists to SQLite |
@@ -549,16 +560,18 @@ Huuy/
 - [x] 3. `src/theme.ts` — colors, fonts, spacing, radii, border widths
 - [x] 3a. `src/components/Text.tsx` — global font wrapper; import from here instead of react-native
 - [x] 3b. `app/_layout.tsx` — font loading, splash screen, Stack navigator
-- [ ] 4. `src/services/storageService.ts` — schema creation, `saveReminder`, `getReminders` (with missed alarm flagging), `getReminderById`, `deleteReminder`, `snoozeReminder`, `getSettings`/`saveSettings`; owns all snake_case ↔ camelCase mapping
-- [ ] 5. `app/index.tsx` — HomeScreen: FAB with `plus.svg`, `settings.svg` icon, "wala langgg" empty state, missed alarm handling
-- [ ] 6. `src/components/ReminderCard.tsx` — "yung" label, title, time, `exclamation.svg` for missed alarms, `trash.svg` and `edit.svg` buttons
+- [x] 4. `src/services/storageService.ts` — schema creation, `saveReminder`, `getReminders`, `markMissedAlarms`, `getReminderById`, `deleteReminder`, `snoozeReminder`, `getSettings`/`saveSettings`; owns all snake_case ↔ camelCase mapping
+- [x] 4a. `src/actions/loadRemindersAction.ts` — calls `markMissedAlarms()` then `getReminders()`; used by HomeScreen on mount and after mutations
+- [x] 4b. Jest setup — `jest-expo`, `jest`, `@types/jest`, `@testing-library/react-native` installed; `jest` config + `transformIgnorePatterns` in `package.json`; `types: ["jest"]` in `tsconfig.json`; `src/services/__tests__/storageService-test.ts` — 11 tests covering all service methods (snake_case mapping, defaults, SQL call shapes)
+- [x] 5. `app/index.tsx` — HomeScreen: FAB with `plus.svg`, `settings.svg` icon, "wala langgg" empty state, calls `loadRemindersAction`
+- [x] 6. `src/components/ReminderCard.tsx` — "yung" label, title, time, `exclamation.svg` for missed alarms (accent border + strikethrough title), `trash.svg` and `edit.svg` buttons; trash wired to `deleteReminderAction` in step 11
 - [ ] 7. `AlarmModule.kt` + `NavigationModule.kt` + `AlarmPackage.kt` — native bridges, register in `MainApplication`; include `FLAG_IMMUTABLE` and `canScheduleExactAlarms()` check; set `singleTask` on `MainActivity` in `AndroidManifest.xml`
 - [ ] 8. `src/services/alarmService.ts` — JS side wrapping `AlarmModule`
 - [ ] 9. `src/actions/createReminderAction.ts` — UUID v4 id generation, wire `app/create.tsx` to both services
 - [ ] 10. `src/actions/editReminderAction.ts` — null guard at top, wire edit button in `ReminderCard`
 - [ ] 11. `src/actions/deleteReminderAction.ts` — used by `app/alarm.tsx` trash and `ReminderCard` trash
 - [ ] 12. `src/actions/snoozeReminderAction.ts` — used by `app/alarm.tsx` snooze button; reads snoozeDuration from settings internally
-- [ ] 13. `app/create.tsx` — "paalala mo nga sakin yung:" input, native time picker, `source` param handling, all three save validations; requires actions from steps 9–10
+- [ ] 13. `app/create.tsx` — "remind mo nga ako about sa:" input, native time picker, `source` param handling, all three save validations; requires actions from steps 9–10
 - [ ] 14. `AlarmReceiver.kt` — catches the broadcast when alarm fires
 - [ ] 15. `AlarmActivity.kt` — wakes screen, handles locked/unlocked via window flags, launches deep link
 - [ ] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
@@ -568,7 +581,76 @@ Huuy/
 
 ---
 
-## 7. Testing with Expo Go
+## 7. Unit Tests (Jest)
+
+### 7A. Setup
+
+Packages installed as dev dependencies:
+
+| Package | Purpose |
+|---|---|
+| `jest-expo` | Jest preset — handles Expo module mocking and Babel transform |
+| `jest` | Test runner |
+| `@types/jest` | TypeScript types for Jest globals (`describe`, `it`, `expect`) |
+| `@testing-library/react-native` | Component rendering and interaction helpers (for future screen tests) |
+
+**`package.json`** — scripts and config:
+```json
+"scripts": {
+  "test": "jest",
+  "test:watch": "jest --watchAll"
+},
+"jest": {
+  "preset": "jest-expo",
+  "transformIgnorePatterns": [
+    "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-native-svg|react-native-uuid)"
+  ]
+}
+```
+
+**`tsconfig.json`** — jest globals in TypeScript:
+```json
+"compilerOptions": {
+  "types": ["jest"]
+}
+```
+
+### 7B. What to unit test vs. what to test in Expo Go
+
+| Layer | Test with Jest | Test with Expo Go |
+|---|---|---|
+| Services (`storageService`, `alarmService`) | Yes — mock the native module, assert SQL call shapes and data mapping | No — mocking SQLite in Expo Go adds no value over Jest |
+| Actions | Yes — mock both services, assert coordination order and data passed between them | No |
+| Components / Screens | Skip — snapshot tests are brittle; use Expo Go for real layout and interaction feedback | Yes |
+| Deep links / Navigation | Skip | Yes — use `npx uri-scheme open` |
+| Native alarm firing | Skip | No — requires a real native build (`expo run:android`) |
+
+### 7C. Test file conventions
+
+- Test files live in a `__tests__/` folder inside the directory of the file under test
+- File name pattern: `<name>-test.ts` or `<name>-test.tsx`
+- Mock native modules at the top of each test file with `jest.mock(...)`
+- Reset mocks and module singletons in `beforeEach` — services use a module-level `db` singleton that must be cleared between tests
+
+### 7D. Current test coverage
+
+| File | Test file | Tests |
+|---|---|---|
+| `src/services/storageService.ts` | `src/services/__tests__/storageService-test.ts` | 11 — covers all methods: snake_case ↔ camelCase mapping, `DEFAULT_SNOOZE_DURATION` fallback, SQL call shapes |
+
+### 7E. Planned tests (add as each step is built)
+
+| File | What to assert |
+|---|---|
+| `src/actions/loadRemindersAction.ts` | `markMissedAlarms` called before `getReminders`; result returned |
+| `src/actions/createReminderAction.ts` | UUID generated; `saveReminder` and `scheduleAlarm` called with correct args |
+| `src/actions/editReminderAction.ts` | Aborts when `getReminderById` returns null; `cancelAlarm` before `scheduleAlarm`; `missedAlarm: false` passed to `saveReminder` |
+| `src/actions/deleteReminderAction.ts` | `cancelAlarm` called before `deleteReminder` |
+| `src/actions/snoozeReminderAction.ts` | Reads `snoozeDuration` from settings; new trigger time = `Date.now() + duration * 60000`; `cancelAlarm` before `scheduleAlarm` |
+
+---
+
+## 8. Testing with Expo Go (UI & Integration)
 
 Before involving any emulator or real device, all screens and navigation can be tested directly using Expo Go. This covers UI layout, screen transitions, form inputs, storage reads and writes, and deep link routing. The native modules are mocked at this stage.
 
@@ -611,7 +693,7 @@ const NavigationModule = NativeModules.NavigationModule ?? {
 - [ ] Saving an edited missed alarm clears `exclamation.svg` and reschedules the alarm
 
 #### CreateScreen (`app/create.tsx`)
-- [ ] Input label reads "paalala mo nga sakin yung:"
+- [ ] Input label reads "remind mo nga ako about sa:"
 - [ ] Title input accepts text
 - [ ] Time picker opens the native Android time picker dialog on tap
 - [ ] Selected time is displayed correctly after picking
@@ -674,7 +756,7 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 
 ---
 
-## 8. README
+## 9. README
 
 > This section defines what goes in `README.md` at the project root.
 
@@ -732,7 +814,7 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 
 ---
 
-## 9. Key Technical Decisions
+## 10. Key Technical Decisions
 
 | Decision | Choice | Reason |
 |---|---|---|
@@ -769,3 +851,4 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 | SVG icons | `src/assets/*.svg` via `react-native-svg` | Settings, edit, trash, plus, snooze, exclamation — scalable and consistent with theme |
 | Widget | Native Kotlin `AppWidgetProvider` | React Native has no widget support |
 | Routing | Expo Router in `app/` | Convention required by Expo Router — all routes must be in `app/` |
+| EAS preview ABI | `arm64-v8a` only via `gradleCommand` | Reduces `run gradlew` time ~70% for internal testing; production profile uses the full four-ABI list from `gradle.properties` — verify before Play Store submission |

@@ -10,8 +10,8 @@
     },
     "preview": {
       "distribution": "internal",
-      "env": {
-        "EAS_GRADLE_CACHE": "1"
+      "android": {
+        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
       }
     },
     "production": {

@@ -33,6 +33,7 @@ module.exports = [
       'react-native/no-raw-text': 'off',
       'import/order': ['warn', { 'newlines-between': 'always' }],
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'react-native/sort-styles': 'off',
     },
     settings: {
       react: { version: 'detect' },

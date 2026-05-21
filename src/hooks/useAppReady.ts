@@ -7,16 +7,16 @@ SplashScreen.preventAutoHideAsync();
 
 export function useAppReady() {
   const [fontsLoaded] = useFonts({ LilitaOne_400Regular });
-  const [isReady, setIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (!fontsLoaded) return;
 
-    SplashScreen.hideAsync();                          // hand off from native → JS splash
-    const timer = setTimeout(() => setIsReady(true), 2500);
+    SplashScreen.hideAsync();
+    const timer = setTimeout(() => setShowSplash(false), 2500);
 
     return () => clearTimeout(timer);
   }, [fontsLoaded]);
 
-  return { fontsLoaded, isReady };
+  return { fontsLoaded, showSplash };
 }

@@ -1,20 +1,29 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Splash } from '../src/components/Splash';
 
 import { useAppReady } from '@/hooks/useAppReady';
+import { colors } from '@/theme';
 
 export default function RootLayout() {
-  const { fontsLoaded, isReady } = useAppReady();
+  const { fontsLoaded, showSplash } = useAppReady();
 
-  if (!fontsLoaded) return null;   // native splash still showing
-  if (!isReady) return <Splash />; // JS splash for 2.5s
-  
+  if (!fontsLoaded) return null;
+
   return (
-    <>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </>
+      {showSplash ? <Splash /> : <Stack screenOptions={{ headerShown: false }} />}
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
+});

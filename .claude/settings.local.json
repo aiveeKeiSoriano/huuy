@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(dir \"C:\\\\Users\\\\aivee\\\\Documents\\\\projects\\\\Huuy\\\\src\\\\assets\")",
+      "Bash(dir \"C:\\\\Users\\\\aivee\\\\Documents\\\\projects\\\\Huuy\\\\app\")",
+      "Bash(npx expo *)",
+      "Bash(dir \"C:\\\\Users\\\\aivee\\\\Documents\\\\projects\\\\Huuy\")",
+      "Bash(findstr -i eslint)",
+      "Bash(npm run *)"
     ]
   }
 }
