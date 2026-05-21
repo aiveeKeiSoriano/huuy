@@ -1,2 +1,3 @@
-// Settings type
-export {};
+export type Settings = {
+  snoozeDuration: number;
+};

@@ -1,2 +1,2 @@
-// App-wide constants — default snooze duration, deep link scheme
-export {};
+export const DEFAULT_SNOOZE_DURATION = 5;
+export const DEEP_LINK_SCHEME = 'huuy';

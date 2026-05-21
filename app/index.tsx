@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Text } from '../src/components/Text';
 import { colors } from '../src/theme';
 
 export default function HomeScreen() {

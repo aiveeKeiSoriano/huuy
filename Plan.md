@@ -57,6 +57,17 @@ No `expo-notifications` and no `expo-task-manager` needed. Alarm triggering is h
 | `eslint-plugin-import` | Import ordering and resolution |
 | `eslint-plugin-react-native-a11y` | Accessibility rules for RN components |
 
+### Step 3b — EAS Build Configuration
+`eas.json` defines three build profiles for Expo Application Services:
+
+| Profile | `distribution` | Notes |
+|---|---|---|
+| `development` | `internal` | Enables `developmentClient` — install on device via EAS, run with `expo start --dev-client` |
+| `preview` | `internal` | APK build shared via EAS link — no Play Store needed |
+| `production` | — | `autoIncrement: true` — EAS manages `versionCode`; submittable to Play Store |
+
+`appVersionSource: "remote"` means EAS owns the version counter — do not bump `versionCode` manually in `android/app/build.gradle`.
+
 ### Step 4 — Configure Permissions
 > **Bare workflow note:** In a bare Expo project, `AndroidManifest.xml` is the source of truth — add permissions there directly. The `app.json` `permissions` array only applies when running `npx expo prebuild` and will not auto-sync to an existing `android/` directory.
 
@@ -188,6 +199,18 @@ Launched by `AlarmActivity.kt` via deep link `huuy://alarm?reminderId=123` when 
 
 ### 3B. Components (`src/components/`)
 
+#### `Text.tsx`
+- Wraps React Native's `Text` with `fontFamily: fonts.lilita` and `color: colors.tertiary` as defaults
+- Accepts all standard `TextProps` — `style` prop overrides the base style per-instance
+- All screens and components import `Text` from `src/components/Text` instead of `react-native`
+
+#### `Splash.tsx`
+- Animated wave splash shown while fonts load in `app/_layout.tsx`
+- Renders the letters `h`, `u`, `u`, `u`, `u`, `y`, `y`, `y` in a row — each wrapped in `WaveLetter` which bounces via `Animated.sequence` (up then back) using `Easing.inOut(Easing.sin)`
+- Letters are staggered 200ms apart (`DELAY_PER_LETTER`) so the wave effect reads left to right
+- Uses `colors.background` fill and `colors.primary` text at 48px Lilita One
+- Replaces the static OS splash frame with motion while the app initialises — dismissed once `useFonts` resolves
+
 #### ReminderCard
 - Small faded text at the top reads: **"yung"**
 - Reminder title displayed prominently below the label
@@ -205,15 +228,15 @@ Single source of truth for all visual styling. Every component imports from here
 
 | Token | Value |
 |---|---|
-| `colors.salmon` | `#fbbbad` — lightest, backgrounds and highlights |
-| `colors.rose` | `#ee8695` — accents, FAB, active states |
-| `colors.blue` | `#4a7a96` — primary action buttons, headers |
-| `colors.navy` | `#333f58` — text, card backgrounds |
-| `colors.dark` | `#292831` — deepest background, alarm screen |
+| `colors.highlight` | `#fbbbad` — lightest, backgrounds and highlights |
+| `colors.primary` | `#ee8695` — accents, FAB, active states |
+| `colors.secondary` | `#4a7a96` — primary action buttons, headers |
+| `colors.tertiary` | `#333f58` — text, card backgrounds |
+| `colors.background` | `#292831` — deepest background, alarm screen |
 | `fonts.lilita` | `'LilitaOne_400Regular'` |
 | `spacing` | `sm: 12`, `md: 20`, `lg: 32` |
 | `radii` | `sm: 12`, `md: 20`, `full: 9999` |
-| `borderWidth` | `2`–`3` |
+| `borderWidth` | `thin: 2`, `thick: 3` |
 
 ---
 
@@ -371,6 +394,8 @@ Huuy/
 │   ├── theme.ts                  # Colors, fonts, spacing, radii, border widths — single source of truth
 │   │
 │   ├── components/
+│   │   ├── Text.tsx              # Global font wrapper — always applies LilitaOne, accepts all TextProps
+│   │   ├── Splash.tsx            # Animated wave splash — "huuuuyyy" letters bounce in sequence during font load
 │   │   └── ReminderCard.tsx      # "yung" label, title, time, exclamation.svg for missed, trash.svg and edit.svg
 │   │
 │   ├── actions/
@@ -409,6 +434,7 @@ Huuy/
 │           └── xml/
 │               └── widget_info.xml   # Widget size and update metadata
 │
+├── eas.json                      # EAS build profiles: development, preview, production
 ├── PLAN.md                       # This file
 └── README.md                     # Setup and scripts (see Section 8)
 ```
@@ -518,9 +544,11 @@ Huuy/
 
 ## 6. Recommended Build Order
 
-- [ ] 1. `src/types/reminder.ts` — `id`, `title`, `triggerTime`, `missedAlarm`
-- [ ] 2. `src/types/settings.ts` — `snoozeDuration`
-- [ ] 3. `src/theme.ts` — colors, fonts, spacing, radii, border widths
+- [x] 1. `src/types/reminder.ts` — `id`, `title`, `triggerTime`, `missedAlarm`
+- [x] 2. `src/types/settings.ts` — `snoozeDuration`
+- [x] 3. `src/theme.ts` — colors, fonts, spacing, radii, border widths
+- [x] 3a. `src/components/Text.tsx` — global font wrapper; import from here instead of react-native
+- [x] 3b. `app/_layout.tsx` — font loading, splash screen, Stack navigator
 - [ ] 4. `src/services/storageService.ts` — schema creation, `saveReminder`, `getReminders` (with missed alarm flagging), `getReminderById`, `deleteReminder`, `snoozeReminder`, `getSettings`/`saveSettings`; owns all snake_case ↔ camelCase mapping
 - [ ] 5. `app/index.tsx` — HomeScreen: FAB with `plus.svg`, `settings.svg` icon, "wala langgg" empty state, missed alarm handling
 - [ ] 6. `src/components/ReminderCard.tsx` — "yung" label, title, time, `exclamation.svg` for missed alarms, `trash.svg` and `edit.svg` buttons
