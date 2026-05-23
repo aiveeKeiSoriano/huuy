@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { colors, spacing, radii, borderWidth } from '../theme';
 import type { Reminder } from '../types/reminder';
 
-import { ExclamationIcon, TrashIcon, EditIcon } from './Icons';
+import { ExclamationIcon, TrashIcon } from './Icons';
 import { Text } from './Text';
 
 type Props = {
@@ -25,7 +25,11 @@ function formatTime(triggerTime: number): string {
 
 export function ReminderCard({ reminder, onDelete, onEdit }: Props) {
   return (
-    <View style={[styles.card, reminder.missedAlarm && styles.cardMissed]}>
+    <TouchableOpacity
+      style={[styles.card, reminder.missedAlarm && styles.cardMissed]}
+      onPress={() => onEdit(reminder.id)}
+      activeOpacity={0.8}
+    >
       <Text style={styles.label}>yung</Text>
       <View style={styles.row}>
         <View style={styles.titleBlock}>
@@ -39,22 +43,14 @@ export function ReminderCard({ reminder, onDelete, onEdit }: Props) {
             <Text style={styles.time}>{formatTime(reminder.triggerTime)}</Text>
           </View>
         </View>
-        <View style={styles.actions}>
-          <TouchableOpacity
-            onPress={() => onEdit(reminder.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <EditIcon size={22} color={colors.highlight} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onDelete(reminder.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <TrashIcon size={22} color={colors.highlight} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => onDelete(reminder.id)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <TrashIcon size={22} color={colors.highlight} />
+        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -109,11 +105,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
     opacity: 0.6,
-  },
-  actions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginLeft: spacing.sm,
   },
 });

@@ -81,6 +81,7 @@ Permissions in `android/app/src/main/AndroidManifest.xml`:
 - `USE_FULL_SCREEN_INTENT` — show alarm UI over the lock screen
 - `INTERNET` — required by Expo; keep
 - `VIBRATE` — alarm vibration; keep
+- `POST_NOTIFICATIONS` — required on Android 13+ for `AlarmReceiver` to post the full-screen notification that launches `AlarmActivity`; without this the notification is silently dropped and no alarm UI appears
 
 > **`DISABLE_KEYGUARD` is not needed.** `AlarmActivity.kt` uses `setShowWhenLocked(true)` and `setTurnScreenOn(true)` (API 27+) — the modern replacement for lock screen dismissal. These are window flags set in `onCreate()` and require no permission.
 
@@ -94,6 +95,7 @@ All assets live in `src/assets/`.
 |---|---|
 | `src/assets/button.png` | Widget icon — copied to android drawable, not used in JS |
 | `src/assets/icon.png` | App icon shown on install and in app drawer |
+| `src/assets/arrow-left.svg` | Back arrow icon — used in screen headers |
 | `src/assets/settings.svg` | Settings icon in HomeScreen header |
 | `src/assets/edit.svg` | Edit button in ReminderCard |
 | `src/assets/trash.svg` | Trash button in ReminderCard and AlarmScreen |
@@ -132,6 +134,10 @@ Before any UI or service, define the types in `src/types/`.
 **`src/types/settings.ts`**
 - `snoozeDuration` — number of minutes to snooze (default 5)
 
+**`src/types/result.ts`**
+- `Result<T = void>` — discriminated union: `{ success: true; data: T } | { success: false; error: string }`
+- All actions return `Result` or `Result<T>` — callers check `result.success` before proceeding; never use try/catch at call sites
+
 > There is no `isActive` flag and no `snoozeCount`. A reminder either exists in storage (active) or it does not (trashed). Snoozing is unlimited. The only way to remove a reminder is the trash button. Missed reminders stay in the list with `exclamation.svg` as a visual marker until the user manually trashes them.
 
 ---
@@ -146,22 +152,27 @@ Expo Router requires all routes to live in `app/`. Each file in `app/` is both a
 
 #### `app/index.tsx` — HomeScreen
 - Displays all reminders as a list of `ReminderCard` components
-- On app open (and after any mutation), calls `loadRemindersAction()` — which first runs `markMissedAlarms()` then returns all reminders; this ensures `missedAlarm: true` is set for any reminder whose `triggerTime` has passed
+- Header shows the app name **"huuy"** on the left and the settings icon on the right
+- Re-fetches via `useFocusEffect` — list updates automatically whenever the screen comes into focus (after create, edit, or returning from settings)
+- Calls `loadRemindersAction()` on focus — which first runs `markMissedAlarms()` then returns all reminders; this ensures `missedAlarm: true` is set for any reminder whose `triggerTime` has passed
+- Shows `Loading` component while the initial fetch is in flight
+- Pull-to-refresh via `RefreshControl` — user can swipe down to manually reload
 - Missed reminders remain in the list with `exclamation.svg` visible — user must manually trash them
-- When no reminders exist, shows faded centered text: **"wala langgg"**
+- When no reminders exist, shows faded centered text: **"wala langgg..."**
+- Trash button on `ReminderCard` shows a confirmation dialog ("delete this reminder?") via `useAlert` before calling `deleteReminderAction`
 - FAB in the bottom right using `plus.svg` — navigates to CreateScreen with no params (`router.push('/create')`)
 - Settings icon (`settings.svg`) in the top right header — navigates to `app/settings.tsx`
 
 ---
 
 #### `app/create.tsx` — CreateScreen
-- Input label reads: **"remind mo nga ako about sa:"**
+- Input label reads: **"huuy remind mo nga sakin yung:"**
 - Time picker using `@react-native-community/datetimepicker` — opens the native Android time picker dialog, calculates next occurrence of the selected time same as a standard alarm
 - Save button behavior:
   - `source=widget` — calls `createReminderAction` then `NavigationModule.goHome()` — sends app to background and returns user to phone home screen without closing the app
   - No `source` param (FAB or edit) — calls `createReminderAction` or `editReminderAction` then `router.back()` — returns to HomeScreen
-- Edit mode is detected by the presence of `id` param — fetches reminder from SQLite via `storageService.getReminderById(id)` and pre-fills the form
-- If `getReminderById` returns null in edit mode — show a brief error toast and call `router.back()` — the reminder no longer exists
+- Edit mode is detected by the presence of `id` param — fetches reminder from SQLite via `storageService.getReminderById(id)` and pre-fills the form; renders `null` (blank screen) while the fetch is in flight
+- If `getReminderById` returns null in edit mode — show a persistent error toast and call `router.back()` — the reminder no longer exists
 - Widget is the only case that passes `source` — everything else defaults to `router.back()` after save
 
 **Save validations** — checked in order before calling any action:
@@ -200,6 +211,22 @@ Launched by `AlarmActivity.kt` via deep link `huuy://alarm?reminderId=123` when 
 ---
 
 ### 3B. Components (`src/components/`)
+
+#### `Alert.tsx`
+- `useAlert()` hook — returns `{ alert, showAlert }`
+- `showAlert(message, onConfirm)` — shows a modal confirmation dialog with cancel + delete buttons
+- `alert` is a JSX element to render inline in the screen; the modal handles its own visibility
+- Used for destructive confirmations (trash button on `ReminderCard`)
+
+#### `Toast.tsx`
+- `useToast()` hook — returns `{ toast, showToast }`
+- `showToast(msg, options?)` — shows an animated pill toast; auto-dismisses after 2500ms by default
+- `options.persistent = true` — keeps the toast visible with a dismiss (✕) button; used for validation errors on `CreateScreen`
+- `toast` is a JSX element to render inline in the screen
+
+#### `Loading.tsx`
+- Centered activity indicator shown while async data is in flight
+- Used by `HomeScreen` while fetching reminders and by `AlarmScreen` while `getReminderById` resolves
 
 #### `Text.tsx`
 - Wraps React Native's `Text` with `fontFamily: fonts.lilita` and `color: colors.tertiary` as defaults
@@ -285,17 +312,19 @@ Actions coordinate multiple services. Screens call actions, not services directl
 #### `createReminderAction.ts`
 - Receives `title` and `triggerTime` from `app/create.tsx`
 - Generates a UUID v4 string as the reminder `id`
-- Calls `storageService.saveReminder()` to persist to SQLite
-- Saves `id` + `triggerTime` to `SharedPreferences` for boot recovery
-- Calls `alarmService.scheduleAlarm()` to register with AlarmManager
+- Calls `storageService.saveReminder()` — returns `{ success: false, error: ERRORS.CREATE_REMINDER }` if this fails
+- Calls `alarmService.scheduleAlarm()` — if this fails, calls `storageService.deleteReminder()` to roll back the saved reminder, then returns `{ success: false, error: ERRORS.SCHEDULE_ALARM }`; two distinct error codes reflect the two failure modes
+- Saves `id` + `triggerTime` to `SharedPreferences` for boot recovery — **deferred to step 17** (`BootReceiver.kt`)
+- Returns `{ success: true }` on full success
 
 #### `editReminderAction.ts`
 Used when user edits any reminder — including missed alarms. Handles full rescheduling in AlarmManager and resets missed alarm state.
-- First calls `storageService.getReminderById(id)` — if it returns null, abort silently; the reminder was already trashed from the alarm screen while the user was editing
+- First calls `storageService.getReminderById(id)` — if it returns null, returns `{ success: false, error: 'Reminder not found' }`; the reminder was already trashed from the alarm screen while the user was editing
 - Calls `alarmService.cancelAlarm()` on the old alarm — removes old `PendingIntent` from AlarmManager
 - Calls `storageService.saveReminder()` with updated `title`, `triggerTime`, and `missedAlarm: false` — clears the missed state so `exclamation.svg` no longer shows
 - Updates `SharedPreferences` with new `triggerTime` for boot recovery
 - Calls `alarmService.scheduleAlarm()` with new `triggerTime` — registers new `PendingIntent` in AlarmManager
+- Returns `Result` — `{ success: false, error: 'Failed to edit reminder' }` on any thrown error
 
 > Cancel must happen before reschedule. Android identifies alarms by their `PendingIntent` hash — calling `setAlarmClock()` with the same id would overwrite automatically, but explicit cancel + reschedule is cleaner and easier to reason about.
 
@@ -303,12 +332,14 @@ Used when user edits any reminder — including missed alarms. Handles full resc
 - Calls `alarmService.cancelAlarm()` first — removes `PendingIntent` from AlarmManager
 - Calls `storageService.deleteReminder()` — removes from SQLite
 - Removes entry from `SharedPreferences`
+- Returns `Result` — `{ success: false, error: 'Failed to delete reminder' }` on any thrown error
 - Used by both `app/index.tsx` (trash on `ReminderCard`) and `app/alarm.tsx` (trash button)
 
 #### `loadRemindersAction.ts`
 Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-step load:
-1. Calls `storageService.markMissedAlarms()` — bulk-flags any reminder whose `triggerTime` has passed
+1. Calls `storageService.markMissedAlarms()` — bulk-flags any reminder whose `triggerTime` has passed; failure is swallowed (`.catch(() => {})`) so a marking error does not prevent the list from loading
 2. Calls `storageService.getReminders()` — returns all reminders with up-to-date `missedAlarm` state
+- Returns `Result<Reminder[]>` — `{ success: false, error: 'Failed to load reminders' }` only if `getReminders()` itself throws
 
 > Keeping missed alarm detection out of `getReminders()` keeps the service as pure CRUD and lets `getReminders()` be called freely without side effects (e.g. from `alarm.tsx` or tests).
 
@@ -326,12 +357,12 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 
 #### `AlarmModule.kt` — JS Bridge
 - Extends `ReactContextBaseJavaModule`
-- Exposes `scheduleAlarm(id, triggerTime)` to JavaScript
-- Exposes `cancelAlarm(id)` to JavaScript
-- Exposes `notifyAlarmReady()` to JavaScript — called by `alarm.tsx` on mount; calls `currentActivity?.finish()` to dismiss `AlarmActivity` once React Native is fully initialised
+- Exposes `scheduleAlarm(id, triggerTime, promise)` to JavaScript — promise-based bridge; resolves `null` on success, rejects with `PERMISSION_DENIED` if `canScheduleExactAlarms()` returns false; allows JS to `await` the call and handle errors
+- Exposes `cancelAlarm(id)` to JavaScript — fire-and-forget, no promise
+- Exposes `notifyAlarmReady()` to JavaScript — called by `alarm.tsx` on mount; calls `pendingAlarmActivity.finish()` via a `Handler` on the main looper to dismiss `AlarmActivity`; `pendingAlarmActivity` is a companion object field set by `AlarmActivity.onCreate()` and cleared in `onDestroy()`
 - Calls `AlarmManager.setAlarmClock()` — highest priority alarm tier on Android
 - All `PendingIntent` instances must be created with `FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT` — required on Android 12+ (API 31+); without `FLAG_IMMUTABLE`, `PendingIntent.getBroadcast()` throws `IllegalArgumentException`
-- Before calling `setAlarmClock()`, check `AlarmManager.canScheduleExactAlarms()` — if `false`, throw a readable error back to JS so the screen can redirect the user to `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM`
+- Before calling `setAlarmClock()`, check `AlarmManager.canScheduleExactAlarms()` — if `false`, reject the promise so the screen can redirect the user to `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM`
 - Registered via `AlarmPackage.kt` in `MainApplication.kt`
 
 #### `NavigationModule.kt` — Home Navigation Bridge
@@ -344,18 +375,24 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 #### `AlarmReceiver.kt` — Broadcast Receiver
 - Wakes when the OS fires the `PendingIntent` at trigger time
 - Extracts `reminderId` from the Intent extras — title is not needed here, `alarm.tsx` fetches the full reminder from SQLite
-- Starts `AlarmActivity` with `FLAG_ACTIVITY_NEW_TASK`
+- Creates notification channel `huuy_alarms` on every call (idempotent — safe to repeat)
+- Posts a high-priority `CATEGORY_ALARM` notification with a `fullScreenIntent` pointing to `AlarmActivity` — this is required on Android 10+ to show a full-screen UI from a background receiver; directly starting an activity from a background process is blocked by the OS
+- On Android 13+ checks `POST_NOTIFICATIONS` permission before posting — logs and aborts if not granted
+- On Android 14+ checks `canUseFullScreenIntent()` — logs a warning if not granted (alarm UI will not appear over lock screen, but continues)
+- `notificationId(reminderId)` companion function hashes `reminderId` to an `Int` — shared with `AlarmActivity` so both sides reference the same notification
 - Registered in `AndroidManifest.xml` with `android:exported="true"`
 
 #### `AlarmActivity.kt` — Lock Screen Launcher
-- `setShowWhenLocked(true)` and `setTurnScreenOn(true)` called in `onCreate()` — at alarm firing time, not at creation time
+- `setShowWhenLocked(true)` and `setTurnScreenOn(true)` called in `onCreate()` on API 27+ — also declared as `android:showWhenLocked="true"` and `android:turnScreenOn="true"` in the manifest as a fallback for older API levels
 - When screen is locked: flags wake the screen and show the activity over the lock screen
 - When screen is already on: OS ignores the flags and launches the activity normally on top of the current app
+- Registers itself in `AlarmModule.pendingAlarmActivity` on `onCreate()` — cleared in `onDestroy()`
 - Fires deep link: `huuy://alarm?reminderId=123` — only the id, title is fetched from SQLite by `alarm.tsx`
 - Starts `MainActivity` with the deep link — does **not** call `finish()` immediately
 - After launching the deep link, starts a 5-second `Handler` timeout that calls `finish()` as a safety net
-- `AlarmModule` exposes a `notifyAlarmReady()` method — `alarm.tsx` calls this in a `useEffect` on mount, which calls `currentActivity?.finish()` immediately, cancelling the timeout
+- `AlarmModule` exposes a `notifyAlarmReady()` method — `alarm.tsx` calls this in a `useEffect` on mount, which calls `pendingAlarmActivity.finish()` via a Handler on the main looper, cancelling the timeout
 - This prevents the race condition where `finish()` is called before React Native has initialised and the deep link route is registered — if JS never mounts (crash, slow device), the timeout cleans up after 5 seconds regardless
+- `onDestroy()` cancels the notification posted by `AlarmReceiver` via `NotificationManager.cancel(notificationId(reminderId))` — ensures the notification is always dismissed when the alarm activity exits
 
 #### `AlarmPackage.kt` — Module Registration
 - Implements `ReactPackage`
@@ -386,7 +423,7 @@ Huuy/
 ├── app/
 │   ├── _layout.tsx               # Root layout, deep link config, font loading, Expo Router entry
 │   ├── index.tsx                 # HomeScreen — "wala langgg", FAB, settings icon, ReminderCard list
-│   ├── create.tsx                # CreateScreen — "remind mo nga ako about sa:", time picker, source param
+│   ├── create.tsx                # CreateScreen — "remind mo nga sakin yung:", time picker, source param
 │   ├── alarm.tsx                 # AlarmScreen — logo loading state, "huuuyyyy yung ano", title, snooze, trash
 │   └── settings.tsx              # SettingsScreen — snooze duration
 │
@@ -394,6 +431,7 @@ Huuy/
 │   ├── assets/
 │   │   ├── button.png            # Widget icon only — copied to android/res/drawable/, never imported in JS
 │   │   ├── icon.png              # App icon — referenced in app.json
+│   │   ├── arrow-left.svg        # Back arrow — used in screen headers
 │   │   ├── settings.svg          # Settings icon in HomeScreen header
 │   │   ├── edit.svg              # Edit button in ReminderCard
 │   │   ├── trash.svg             # Trash button in ReminderCard and AlarmScreen
@@ -406,7 +444,10 @@ Huuy/
 │   ├── components/
 │   │   ├── Text.tsx              # Global font wrapper — always applies LilitaOne, accepts all TextProps
 │   │   ├── Splash.tsx            # Animated wave splash — "huuuuyyy" letters bounce in sequence during font load
-│   │   └── ReminderCard.tsx      # "yung" label, title, time, exclamation.svg for missed, trash.svg and edit.svg
+│   │   ├── Loading.tsx           # Centered activity indicator — used by HomeScreen and AlarmScreen
+│   │   ├── ReminderCard.tsx      # "yung" label, title, time, exclamation.svg for missed, trash.svg and edit.svg
+│   │   ├── Alert.tsx             # useAlert() hook — modal confirmation dialog for destructive actions
+│   │   └── Toast.tsx             # useToast() hook — auto-dismiss pill toast; persistent mode for validation errors
 │   │
 │   ├── actions/
 │   │   ├── loadRemindersAction.ts    # markMissedAlarms() then getReminders() — called by HomeScreen on mount and after mutations
@@ -421,10 +462,17 @@ Huuy/
 │   │
 │   ├── types/
 │   │   ├── reminder.ts           # Reminder type: id, title, triggerTime, missedAlarm
-│   │   └── settings.ts           # Settings type: snoozeDuration
+│   │   ├── settings.ts           # Settings type: snoozeDuration
+│   │   └── result.ts             # Result<T = void> discriminated union — all actions return this
+│   │
+│   ├── hooks/
+│   │   └── useAppReady.ts        # Font loading + splash timing — consumed by `app/_layout.tsx`
+│   │
+│   ├── utils/
+│   │   └── log.ts                # makeLogger — structured logging utility; used by alarmService and alarm.tsx
 │   │
 │   └── constants/
-│       └── index.ts              # Default snooze duration, deep link scheme
+│       └── index.ts              # Default snooze duration, deep link scheme, timing windows, ERRORS map
 │
 ├── android/
 │   └── app/src/main/
@@ -460,7 +508,7 @@ Huuy/
 |---|---|---|
 | 1 | User | Taps FAB on HomeScreen |
 | 2 | App | Calls `router.push('/create')` — no params needed |
-| 3 | User | Types in "remind mo nga ako about sa:" input and selects time via native dialog |
+| 3 | User | Types in "remind mo nga sakin yung:" input and selects time via native dialog |
 | 4 | create.tsx | Validates: title not empty, trigger ≥ 5 min from now, no conflict with existing reminders |
 | 5 | createReminderAction | Generates UUID v4 as reminder `id` |
 | 6 | createReminderAction | Calls `storageService.saveReminder()` — persists to SQLite |
@@ -504,11 +552,11 @@ Huuy/
 |---|---|---|
 | 1 | Android OS | Trigger time reached — OS fires the `PendingIntent` |
 | 2 | AlarmReceiver.kt | `onReceive()` fires — extracts `reminderId` from Intent extras |
-| 3 | AlarmReceiver.kt | Starts `AlarmActivity` with `FLAG_ACTIVITY_NEW_TASK` |
+| 3 | AlarmReceiver.kt | Posts a full-screen notification with `fullScreenIntent` pointing to `AlarmActivity` |
 | 4 | AlarmActivity.kt | `onCreate()` calls `setShowWhenLocked(true)` and `setTurnScreenOn(true)` |
 | 5 | AlarmActivity.kt | Fires deep link: `huuy://alarm?reminderId=123` — only the id |
 | 6 | Expo Router | Routes deep link to `app/alarm.tsx` |
-| 7 | alarm.tsx | Shows logo while fetching reminder via `storageService.getReminderById(reminderId)` |
+| 7 | alarm.tsx | Shows `Loading` component while fetching reminder via `storageService.getReminderById(reminderId)` |
 | 8 | alarm.tsx | Renders alarm UI with title, snooze and trash buttons |
 | 9 | AlarmActivity.kt | Starts a 5-second timeout — will call `finish()` if JS never signals ready |
 | 10 | alarm.tsx | Calls `AlarmModule.notifyAlarmReady()` on mount — `AlarmActivity` finishes immediately and cancels the timeout |
@@ -557,6 +605,7 @@ Huuy/
 
 - [x] 1. `src/types/reminder.ts` — `id`, `title`, `triggerTime`, `missedAlarm`
 - [x] 2. `src/types/settings.ts` — `snoozeDuration`
+- [x] 2a. `src/types/result.ts` — `Result<T = void>` discriminated union; all actions return this
 - [x] 3. `src/theme.ts` — colors, fonts, spacing, radii, border widths
 - [x] 3a. `src/components/Text.tsx` — global font wrapper; import from here instead of react-native
 - [x] 3b. `app/_layout.tsx` — font loading, splash screen, Stack navigator
@@ -565,13 +614,13 @@ Huuy/
 - [x] 4b. Jest setup — `jest-expo`, `jest`, `@types/jest`, `@testing-library/react-native` installed; `jest` config + `transformIgnorePatterns` in `package.json`; `types: ["jest"]` in `tsconfig.json`; `src/services/__tests__/storageService-test.ts` — 11 tests covering all service methods (snake_case mapping, defaults, SQL call shapes)
 - [x] 5. `app/index.tsx` — HomeScreen: FAB with `plus.svg`, `settings.svg` icon, "wala langgg" empty state, calls `loadRemindersAction`
 - [x] 6. `src/components/ReminderCard.tsx` — "yung" label, title, time, `exclamation.svg` for missed alarms (accent border + strikethrough title), `trash.svg` and `edit.svg` buttons; trash wired to `deleteReminderAction` in step 11
-- [ ] 7. `AlarmModule.kt` + `NavigationModule.kt` + `AlarmPackage.kt` — native bridges, register in `MainApplication`; include `FLAG_IMMUTABLE` and `canScheduleExactAlarms()` check; set `singleTask` on `MainActivity` in `AndroidManifest.xml`
-- [ ] 8. `src/services/alarmService.ts` — JS side wrapping `AlarmModule`
-- [ ] 9. `src/actions/createReminderAction.ts` — UUID v4 id generation, wire `app/create.tsx` to both services
-- [ ] 10. `src/actions/editReminderAction.ts` — null guard at top, wire edit button in `ReminderCard`
-- [ ] 11. `src/actions/deleteReminderAction.ts` — used by `app/alarm.tsx` trash and `ReminderCard` trash
-- [ ] 12. `src/actions/snoozeReminderAction.ts` — used by `app/alarm.tsx` snooze button; reads snoozeDuration from settings internally
-- [ ] 13. `app/create.tsx` — "remind mo nga ako about sa:" input, native time picker, `source` param handling, all three save validations; requires actions from steps 9–10
+- [x] 7. `AlarmModule.kt` + `NavigationModule.kt` + `AlarmPackage.kt` — native bridges, register in `MainApplication`; include `FLAG_IMMUTABLE` and `canScheduleExactAlarms()` check; set `singleTask` on `MainActivity` in `AndroidManifest.xml`; `AlarmReceiver.kt` stub added so module compiles
+- [x] 8. `src/services/alarmService.ts` — JS side wrapping `AlarmModule` and `NavigationModule`
+- [x] 9. `src/actions/createReminderAction.ts` — UUID v4 id generation, wire `app/create.tsx` to both services; SharedPreferences write deferred to step 17
+- [x] 10. `src/actions/editReminderAction.ts` — null guard at top, wire edit button in `ReminderCard`
+- [x] 11. `src/actions/deleteReminderAction.ts` — used by `app/alarm.tsx` trash and `ReminderCard` trash
+- [x] 12. `src/actions/snoozeReminderAction.ts` — used by `app/alarm.tsx` snooze button; reads snoozeDuration from settings internally
+- [x] 13. `app/create.tsx` — "remind mo nga sakin yung:" input, native time picker, `source` param handling, all three save validations; requires actions from steps 9–10
 - [ ] 14. `AlarmReceiver.kt` — catches the broadcast when alarm fires
 - [ ] 15. `AlarmActivity.kt` — wakes screen, handles locked/unlocked via window flags, launches deep link
 - [ ] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
@@ -693,7 +742,7 @@ const NavigationModule = NativeModules.NavigationModule ?? {
 - [ ] Saving an edited missed alarm clears `exclamation.svg` and reschedules the alarm
 
 #### CreateScreen (`app/create.tsx`)
-- [ ] Input label reads "remind mo nga ako about sa:"
+- [ ] Input label reads "remind mo nga sakin yung:"
 - [ ] Title input accepts text
 - [ ] Time picker opens the native Android time picker dialog on tap
 - [ ] Selected time is displayed correctly after picking
@@ -826,6 +875,8 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 | Missed alarm | `missedAlarm` flag in type | Computed on app open from stale `triggerTime` — no native involvement, no auto-delete, user trashes manually |
 | Snooze limit | Unlimited | User can snooze as many times as needed |
 | Coordination | Actions layer | Keeps services single-responsibility, screens stay clean |
+| Action error handling | `Result<T>` discriminated union | Type-safe, forces callers to check `result.success` — no silent failures, no scattered try/catch at call sites |
+| `markMissedAlarms` failure | Swallowed in `loadRemindersAction` | Non-critical side-effect — a marking failure should not prevent the list from loading |
 | Edit action | `editReminderAction` | Cancel old alarm + save + reschedule as one coordinated operation in AlarmManager |
 | Edit null guard | `getReminderById` check at top of `editReminderAction` | Handles race where reminder is trashed from alarm screen while user is still editing |
 | Time picker | `@react-native-community/datetimepicker` | Native Android dialog — familiar to users, handles locale and accessibility |
@@ -836,7 +887,7 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 | AlarmScreen loading | Logo while fetching | `getReminderById` is async — logo shown during fetch; error state with exit if null returned |
 | AlarmScreen UI | Single `app/alarm.tsx` for both states | `setShowWhenLocked` and `setTurnScreenOn` are OS window flags, not UI flags — same screen renders regardless |
 | AlarmScreen exit | `BackHandler.exitApp()` after await | Returns user to pre-alarm context without assuming a back stack; safe for snooze because AlarmManager is registered before exit; `await` before exit is sufficient in practice — revisit only if write failures appear during testing |
-| AlarmActivity finish timing | `notifyAlarmReady()` callback + 5s timeout | Avoids race where `finish()` drops the deep link before React Native initialises on cold launch; JS calls `notifyAlarmReady()` on mount for the fast path; 5-second `Handler` timeout is the safety net if JS never mounts |
+| AlarmActivity finish timing | `notifyAlarmReady()` callback + 5s timeout | Avoids race where `finish()` drops the deep link before React Native initialises on cold launch; JS calls `notifyAlarmReady()` on mount for the fast path; 5-second `Handler` timeout is the safety net if JS never mounts; `pendingAlarmActivity` companion field used instead of `currentActivity` to ensure the correct instance is finished |
 | Snooze duration in action | Read from SQLite internally | `snoozeReminderAction` calls `storageService.getSettings()` — callers pass only `reminderId` |
 | PendingIntent flag | `FLAG_IMMUTABLE` | Required on Android 12+ (API 31+) — prevents `IllegalArgumentException` on `PendingIntent.getBroadcast()` |
 | Exact alarm permission | Runtime check + redirect | Android 14+ requires user grant via `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` — checked in `AlarmModule.kt` before every `setAlarmClock()` call |

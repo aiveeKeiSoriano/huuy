@@ -21,22 +21,34 @@
 
 - [x] 1. `src/types/reminder.ts`
 - [x] 2. `src/types/settings.ts`
+- [x] 2a. `src/types/result.ts` — `Result<T = void>` discriminated union; all actions return this
 - [x] 3. `src/theme.ts`
 - [x] 3a. `src/components/Text.tsx` — custom Text wrapper (added to plan)
 - [x] 3b. `app/_layout.tsx` — font loading + splash screen + Stack navigator
-- [ ] 4. `src/services/storageService.ts`
-- [ ] 5. `app/index.tsx` — HomeScreen
-- [ ] 6. `src/components/ReminderCard.tsx`
-- [ ] 7. `AlarmModule.kt` + `NavigationModule.kt` + `AlarmPackage.kt`
-- [ ] 8. `src/services/alarmService.ts`
-- [ ] 9. `src/actions/createReminderAction.ts`
-- [ ] 10. `src/actions/editReminderAction.ts`
-- [ ] 11. `src/actions/deleteReminderAction.ts`
-- [ ] 12. `src/actions/snoozeReminderAction.ts`
-- [ ] 13. `app/create.tsx` — CreateScreen
-- [ ] 14. `AlarmReceiver.kt`
-- [ ] 15. `AlarmActivity.kt`
-- [ ] 16. `app/alarm.tsx` — AlarmScreen
+- [x] 4. `src/services/storageService.ts`
+- [x] 4a. `src/actions/loadRemindersAction.ts`
+- [x] 4b. Jest setup — `jest-expo`, `jest`, `@types/jest`, `@testing-library/react-native` installed; `src/services/__tests__/storageService-test.ts` — 11 tests
+- [x] 5. `app/index.tsx` — HomeScreen
+- [x] 6. `src/components/ReminderCard.tsx`
+- [x] 7. `AlarmModule.kt` + `NavigationModule.kt` + `AlarmPackage.kt` — registered in `MainApplication`; `AlarmReceiver.kt` stub added so module compiles
+- [x] 8. `src/services/alarmService.ts`
+- [x] 9. `src/actions/createReminderAction.ts`
+- [x] 10. `src/actions/editReminderAction.ts`
+- [x] 11. `src/actions/deleteReminderAction.ts`
+- [x] 12. `src/actions/snoozeReminderAction.ts`
+- [x] 13. `app/create.tsx` — CreateScreen
+- [x] **Extra** — `src/components/Alert.tsx` — `useAlert()` hook; modal confirmation dialog for destructive actions (trash)
+- [x] **Extra** — `src/components/Toast.tsx` — `useToast()` hook; auto-dismiss pill toast + persistent mode for validation errors
+- [x] **Extra** — `src/assets/arrow-left.svg` — back arrow icon for screen headers
+- [x] **Extra** — `ERRORS` map added to `src/constants/index.ts` — single source of truth for all error strings; all action files and `app/create.tsx` import from here instead of using inline strings
+- [x] **Extra** — `src/utils/log.ts` — `makeLogger` structured logging utility; used by `alarmService.ts` and `app/alarm.tsx`
+- [x] **Extra** — `src/hooks/useAppReady.ts` — font loading + splash timing logic extracted from `app/_layout.tsx`
+- [x] **Extra** — `src/components/Loading.tsx` — centered activity indicator; used by `HomeScreen` and `AlarmScreen`
+- [x] **Extra** — `HomeScreen` additions: "huuy" app name text in header; pull-to-refresh via `RefreshControl`; delete confirmation dialog via `useAlert` before calling `deleteReminderAction`; `useFocusEffect` for automatic refresh on screen focus
+- [x] **Extra** — `createReminderAction` two-stage error handling: separate try/catch for `saveReminder` and `scheduleAlarm`; rolls back via `deleteReminder` if scheduling fails after save succeeds
+- [x] 14. `AlarmReceiver.kt` — extracts `reminderId` from Intent extras; creates notification channel `huuy_alarms`; posts a `CATEGORY_ALARM` full-screen notification with `fullScreenIntent` pointing to `AlarmActivity` (direct `startActivity` from a background receiver is blocked on Android 10+); checks `POST_NOTIFICATIONS` on Android 13+, `canUseFullScreenIntent()` on Android 14+; `notificationId()` companion function shared with `AlarmActivity` for cancellation; registered in manifest with `android:exported="true"`
+- [x] 15. `AlarmActivity.kt` — `setShowWhenLocked`/`setTurnScreenOn` in `onCreate` (API 27+) + same attributes in manifest as fallback for older APIs; fires `huuy://alarm?reminderId=...` deep link; 5s `Handler` timeout fallback; registers self in `AlarmModule.pendingAlarmActivity`; clears ref and cancels timeout in `onDestroy`; `onDestroy` also cancels the notification via `NotificationManager.cancel(notificationId(reminderId))`; `AlarmModule.notifyAlarmReady()` finishes via `pendingAlarmActivity` (not `currentActivity`) on the main looper
+- [x] 16. `app/alarm.tsx` — loading state (`Loading`), null error state (`ERRORS.REMINDER_GONE` + close button), "huuuyyyy yung ano" label, title, clock, snooze + trash buttons; `notifyAlarmReady()` on mount; `BackHandler` blocks back; `BackHandler.exitApp()` after each action; `SnoozeIcon` added to `Icons.tsx` from `snooze.svg`
 - [ ] 17. `BootReceiver.kt`
 - [ ] 18. `app/settings.tsx` — SettingsScreen
 - [ ] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/`

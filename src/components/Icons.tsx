@@ -50,6 +50,28 @@ export function TrashIcon({ size = 24, color }: IconProps) {
   );
 }
 
+export function ArrowLeftIcon({ size = 24, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 31.57 29.638">
+      <Path
+        d="m1.53 15.15 11.08 8a2.51 2.51 0 0 0 3 0 4.07 4.07 0 0 0 1.52-3.3v-4h11.26a2.4 2.4 0 0 0 .88-.16 4 4 0 0 0 2.3-3.84A4 4 0 0 0 29.27 8a2.4 2.4 0 0 0-.88-.16H17.15v-4A4.06 4.06 0 0 0 15.63.51a2.49 2.49 0 0 0-3 0l-11.08 8A4.1 4.1 0 0 0 0 11.85a4.09 4.09 0 0 0 1.53 3.3"
+        fill={color}
+      />
+    </Svg>
+  );
+}
+
+export function SnoozeIcon({ size = 24, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Path
+        d="M50,19c-21,0-38,17-38,38s17,38,38,38s38-17,38-38S71,19,50,19z M61,72H39c-1.6,0-3.1-1-3.7-2.5c-0.6-1.5-0.3-3.2,0.9-4.4L51.3,50H39c-2.2,0-4-1.8-4-4s1.8-4,4-4h22c1.6,0,3.1,1,3.7,2.5s0.3,3.2-0.9,4.4L48.7,64H61c2.2,0,4,1.8,4,4S63.2,72,61,72z M84,28c-1,0-2-0.4-2.8-1.2l-4-4c-1.6-1.6-1.6-4.1,0-5.7c1.6-1.6,4.1-1.6,5.7,0l4,4C89.4,23.6,87.5,28.1,84,28z M58,13H42c-2.2,0-4-1.8-4-4s1.8-4,4-4h16c2.2,0,4,1.8,4,4S60.2,13,58,13z"
+        fill={color}
+      />
+    </Svg>
+  );
+}
+
 export function EditIcon({ size = 24, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="-.423 -.847 9.313 10.2">

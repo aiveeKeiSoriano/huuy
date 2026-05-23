@@ -12,24 +12,27 @@ type ReminderRow = {
 };
 
 let db: SQLite.SQLiteDatabase | null = null;
+let initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 async function getDb(): Promise<SQLite.SQLiteDatabase> {
-  if (!db) {
-    db = await SQLite.openDatabaseAsync('huuy.db');
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS reminders (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        trigger_time INTEGER NOT NULL,
-        missed_alarm INTEGER NOT NULL DEFAULT 0
+  if (db) return db;
+  if (!initPromise) {
+    initPromise = (async () => {
+      const database = await SQLite.openDatabaseAsync('huuy.db');
+      await database.execAsync(
+        'CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, title TEXT NOT NULL, trigger_time INTEGER NOT NULL, missed_alarm INTEGER NOT NULL DEFAULT 0);',
       );
-      CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
+      await database.execAsync(
+        'CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);',
       );
-    `);
+      db = database;
+      return database;
+    })().catch((err) => {
+      initPromise = null;
+      throw err;
+    });
   }
-  return db;
+  return initPromise;
 }
 
 function rowToReminder(row: ReminderRow): Reminder {

@@ -1,23 +1,41 @@
 import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
+import { useAlert } from '../src/components/Alert';
+import { Loading } from '../src/components/Loading';
 import { ReminderCard } from '../src/components/ReminderCard';
 import { Text } from '../src/components/Text';
 import { SettingsIcon, PlusIcon } from '../src/components/Icons';
 import { loadRemindersAction } from '../src/actions/loadRemindersAction';
+import { deleteReminderAction } from '../src/actions/deleteReminderAction';
 import { colors, spacing, radii } from '../src/theme';
 import type { Reminder } from '../src/types/reminder';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { alert, showAlert } = useAlert();
+
+  const fetchReminders = useCallback(async () => {
+    const result = await loadRemindersAction();
+    if (result.success) setReminders(result.data);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadRemindersAction().then(setReminders);
-    }, []),
+      setLoading(true);
+      fetchReminders().finally(() => setLoading(false));
+    }, [fetchReminders]),
   );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchReminders();
+    setRefreshing(false);
+  }, [fetchReminders]);
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -26,10 +44,11 @@ export default function HomeScreen() {
     [router],
   );
 
-  const handleDelete = useCallback(async (_id: string) => {
-    // wired to deleteReminderAction in step 11
+  const handleDelete = useCallback(async (id: string) => {
+    const result = await deleteReminderAction(id);
+    if (!result.success) return;
     const updated = await loadRemindersAction();
-    setReminders(updated);
+    if (updated.success) setReminders(updated.data);
   }, []);
 
   return (
@@ -44,22 +63,33 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {reminders.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>wala langgg...</Text>
-        </View>
+      {loading || refreshing ? (
+        <Loading />
       ) : (
         <FlatList
           data={reminders}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, reminders.length === 0 && styles.listEmpty]}
           renderItem={({ item }) => (
             <ReminderCard
               reminder={item}
-              onDelete={handleDelete}
+              onDelete={(id) => showAlert('delete this reminder?', () => handleDelete(id))}
               onEdit={handleEdit}
             />
           )}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>wala langgg...</Text>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[colors.primary]}
+              progressBackgroundColor={colors.tertiary}
+            />
+          }
         />
       )}
 
@@ -70,6 +100,9 @@ export default function HomeScreen() {
       >
         <PlusIcon size={28} color={colors.background} />
       </TouchableOpacity>
+
+
+      {alert}
     </View>
   );
 }
@@ -105,6 +138,9 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
+  },
+  listEmpty: {
+    flex: 1,
   },
   fab: {
     alignItems: 'center',

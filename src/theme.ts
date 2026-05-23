@@ -4,6 +4,7 @@ export const colors = {
   secondary: '#4a7a96',
   tertiary: '#333f58',
   background: '#292831',
+  overlay: '#000000bb',
 };
 
 export const fonts = {

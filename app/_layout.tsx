@@ -14,7 +14,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
       {showSplash ? <Splash /> : <Stack screenOptions={{ headerShown: false }} />}
     </SafeAreaView>
