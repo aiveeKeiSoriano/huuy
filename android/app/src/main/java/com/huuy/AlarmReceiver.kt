@@ -26,14 +26,15 @@ class AlarmReceiver : BroadcastReceiver() {
             Log.e(TAG, "AlarmReceiver — reminderId extra missing, aborting")
             return
         }
+        val reminderTitle = intent.getStringExtra(EXTRA_REMINDER_TITLE) ?: ""
 
-        Log.d(TAG, "AlarmReceiver — reminderId=$reminderId")
+        Log.d(TAG, "AlarmReceiver — reminderId=$reminderId title=$reminderTitle")
 
         if (!checkPermissions(context)) return
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         setupChannel(notificationManager)
-        postNotification(context, notificationManager, reminderId)
+        postNotification(context, notificationManager, reminderId, reminderTitle)
     }
 
     private fun checkPermissions(context: Context): Boolean {
@@ -50,9 +51,11 @@ class AlarmReceiver : BroadcastReceiver() {
 
     private fun setupChannel(notificationManager: NotificationManager) {
         try {
-            val channel = NotificationChannel(CHANNEL_ID, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
+            val channel = NotificationChannel(CHANNEL_ID, "Alarms", NotificationManager.IMPORTANCE_MAX).apply {
                 setBypassDnd(true)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 400, 200, 400)
             }
             notificationManager.createNotificationChannel(channel)
             Log.d(TAG, "AlarmReceiver — notification channel created/updated")
@@ -61,7 +64,7 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun postNotification(context: Context, notificationManager: NotificationManager, reminderId: String) {
+    private fun postNotification(context: Context, notificationManager: NotificationManager, reminderId: String, reminderTitle: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val canUse = notificationManager.canUseFullScreenIntent()
             Log.d(TAG, "AlarmReceiver — canUseFullScreenIntent=$canUse")
@@ -84,8 +87,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
             val notification = Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle("Huuy")
-                .setContentText("huuuyyyy!")
+                .setContentTitle("Huuuuy yung")
+                .setContentText(reminderTitle.ifEmpty { "ano!" })
                 .setCategory(Notification.CATEGORY_ALARM)
                 .setFullScreenIntent(fullScreenPendingIntent, true)
                 .setOngoing(true)

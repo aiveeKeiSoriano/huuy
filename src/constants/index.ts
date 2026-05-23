@@ -16,7 +16,7 @@ export const ERRORS = {
   DELETE_REMINDER: 'Failed to delete reminder',
   SNOOZE_REMINDER: 'Failed to snooze reminder',
   TITLE_REQUIRED: 'yung alin?',
-  TIME_REQUIRED: 'pick a time',
+  TIME_REQUIRED: 'kelan?',
   TIME_TOO_SOON: `pick a time at least ${_minLeadMinutes} minutes from now`,
   TIME_CONFLICT: 'you already have a reminder around that time',
 } as const;

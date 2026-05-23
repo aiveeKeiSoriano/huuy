@@ -301,7 +301,7 @@ CREATE TABLE IF NOT EXISTS settings (
 - `getSettings()` / `saveSettings()` — read and write `snoozeDuration` via the `settings` table using key `snooze_duration`
 
 #### `alarmService.ts`
-- `scheduleAlarm(reminder)` — destructures `reminder.id` and `reminder.triggerTime`, then calls `AlarmModule.scheduleAlarm(id, triggerTime)` via `NativeModules` bridge → `AlarmManager.setAlarmClock()` in Kotlin
+- `scheduleAlarm(reminder)` — destructures `reminder.id`, `reminder.title`, and `reminder.triggerTime`, then calls `AlarmModule.scheduleAlarm(id, title, triggerTime)` via `NativeModules` bridge → `AlarmManager.setAlarmClock()` in Kotlin; `title` is passed so Kotlin can include it in the notification without fetching from SQLite
 - `cancelAlarm(reminderId)` — calls `AlarmModule.cancelAlarm()`
 
 ---
@@ -357,7 +357,7 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 
 #### `AlarmModule.kt` — JS Bridge
 - Extends `ReactContextBaseJavaModule`
-- Exposes `scheduleAlarm(id, triggerTime, promise)` to JavaScript — promise-based bridge; resolves `null` on success, rejects with `PERMISSION_DENIED` if `canScheduleExactAlarms()` returns false; allows JS to `await` the call and handle errors
+- Exposes `scheduleAlarm(id, title, triggerTime, promise)` to JavaScript — promise-based bridge; `title` is stored as an Intent extra so `AlarmReceiver` can show the reminder's text in the notification body without reading SQLite; resolves `null` on success, rejects with `PERMISSION_DENIED` if `canScheduleExactAlarms()` returns false; allows JS to `await` the call and handle errors
 - Exposes `cancelAlarm(id)` to JavaScript — fire-and-forget, no promise
 - Exposes `notifyAlarmReady()` to JavaScript — called by `alarm.tsx` on mount; calls `pendingAlarmActivity.finish()` via a `Handler` on the main looper to dismiss `AlarmActivity`; `pendingAlarmActivity` is a `WeakReference<AlarmActivity>?` companion field — set by `AlarmActivity.onCreate()` and cleared in `onDestroy()`; `WeakReference` prevents memory leaks if Android recreates the Activity within the same process without clearing the field
 - `alarmManager` is a computed property (not stored) — fetched via `getSystemService` on each call; avoids repeating the cast in every method
@@ -370,6 +370,7 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 - Package-internal (`internal`) constants shared across all alarm Kotlin files
 - `TAG` — log tag `"Huuy"` used in every `Log.d` / `Log.e` call
 - `EXTRA_REMINDER_ID` — Intent extra key `"reminderId"` — single definition prevents silent key mismatches across `AlarmModule`, `AlarmReceiver`, and `AlarmActivity`
+- `EXTRA_REMINDER_TITLE` — Intent extra key `"reminderTitle"` — passed from `AlarmModule` through to `AlarmReceiver` so the notification body can show the reminder's actual text without an SQLite read
 - `ALARM_DEEP_LINK_BASE` — `"huuy://alarm?reminderId="` — concatenated with `reminderId` in `AlarmActivity`
 - `PENDING_INTENT_FLAGS` — `FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT` — used in both `AlarmModule` and `AlarmReceiver`
 
@@ -385,9 +386,10 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 - Extracts `reminderId` from the Intent extras — title is not needed here, `alarm.tsx` fetches the full reminder from SQLite
 - `onReceive()` delegates to three private methods: `checkPermissions()`, `setupChannel()`, `postNotification()` — each does one thing
 - `checkPermissions()` — on Android 13+ checks `POST_NOTIFICATIONS`; returns `false` and aborts `onReceive` if not granted
-- `setupChannel()` — creates notification channel `huuy_alarms` (idempotent — safe to repeat on every call)
-- `postNotification()` — on Android 14+ logs a warning if `canUseFullScreenIntent()` is not granted; posts a high-priority `CATEGORY_ALARM` notification with a `fullScreenIntent` pointing to `AlarmActivity` — required on Android 10+ to show full-screen UI from a background receiver; directly starting an activity from background is blocked by the OS
+- `setupChannel()` — creates notification channel `huuy_alarms` with `IMPORTANCE_MAX`, `setBypassDnd(true)`, `VISIBILITY_PUBLIC`, and vibration pattern `[0, 400, 200, 400]`; idempotent — safe to repeat on every call; note: Android caches channel settings after first creation — clearing app data or reinstalling is required to pick up channel changes on existing installs
+- `postNotification()` — on Android 14+ logs a warning if `canUseFullScreenIntent()` is not granted; reads `reminderTitle` from the Intent extra; posts a `CATEGORY_ALARM` notification with title `"Huuuuy yung"` and body set to the reminder's title (falls back to `"huuuyyyy!"` if empty); includes a `fullScreenIntent` pointing to `AlarmActivity` — required on Android 10+ to show full-screen UI from a background receiver; directly starting an activity from background is blocked by the OS; notification is `ongoing: true` and `autoCancel: false` — only dismissed when `AlarmActivity` finishes
 - `notificationId(reminderId)` companion function hashes `reminderId` to an `Int` — shared with `AlarmActivity` so both sides reference the same notification
+- No action buttons on the notification — snooze and delete require SQLite access and AlarmManager coordination; duplicating that logic in Kotlin is not worth the maintenance cost; dismissing the notification is acceptable UX — user can open the app, see the missed reminder, and snooze or delete from there
 - Registered in `AndroidManifest.xml` with `android:exported="true"`
 
 #### `AlarmActivity.kt` — Lock Screen Launcher
@@ -560,8 +562,8 @@ Huuy/
 | # | Actor | Action |
 |---|---|---|
 | 1 | Android OS | Trigger time reached — OS fires the `PendingIntent` |
-| 2 | AlarmReceiver.kt | `onReceive()` fires — extracts `reminderId` from Intent extras |
-| 3 | AlarmReceiver.kt | Posts a full-screen notification with `fullScreenIntent` pointing to `AlarmActivity` |
+| 2 | AlarmReceiver.kt | `onReceive()` fires — extracts `reminderId` and `reminderTitle` from Intent extras |
+| 3 | AlarmReceiver.kt | Posts a full-screen `IMPORTANCE_MAX` `CATEGORY_ALARM` notification with title `"Huuuuy yung"`, body set to the reminder's title, and `fullScreenIntent` pointing to `AlarmActivity` |
 | 4 | AlarmActivity.kt | `onCreate()` calls `setShowWhenLocked(true)` and `setTurnScreenOn(true)` |
 | 5 | AlarmActivity.kt | Fires deep link: `huuy://alarm?reminderId=123` — only the id |
 | 6 | Expo Router | Routes deep link to `app/alarm.tsx` |
@@ -902,7 +904,9 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 | Snooze duration in action | Read from SQLite internally | `snoozeReminderAction` calls `storageService.getSettings()` — callers pass only `reminderId` |
 | PendingIntent flag | `FLAG_IMMUTABLE` | Required on Android 12+ (API 31+) — prevents `IllegalArgumentException` on `PendingIntent.getBroadcast()` |
 | Exact alarm permission | Runtime check + redirect | Android 14+ requires user grant via `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` — checked in `AlarmModule.kt` before every `setAlarmClock()` call |
-| AlarmReceiver intent data | `reminderId` only | Title is never passed through the Intent — `alarm.tsx` fetches the full reminder from SQLite |
+| AlarmReceiver intent data | `reminderId` + `reminderTitle` | Both are passed through the Intent — `reminderId` so `AlarmActivity` can fire the correct deep link; `reminderTitle` so `AlarmReceiver` can show it in the notification body without reading SQLite; full reminder is still fetched from SQLite by `alarm.tsx` |
+| Notification action buttons | None | Adding snooze/delete buttons requires native SQLite access and duplicates the coordination logic that already lives in JS actions; not worth maintaining two implementations; dismissing the notification is acceptable — user can open the app and handle missed reminders from the list |
+| Notification importance | `IMPORTANCE_MAX` | Highest urgency tier — ensures the alarm notification breaks through on devices that might otherwise suppress it; paired with `setBypassDnd(true)` for alarm category behavior |
 | MainActivity launch mode | `singleTask` | Prevents second instance on widget deep link when app is backgrounded — delivers intent via `onNewIntent()` instead |
 | Reminder id | UUID v4 | Unique, collision-free, no coordination needed between JS and Kotlin |
 | SQLite schema | Defined in `storageService` | Single owner of column names and types — all mapping between snake_case and camelCase happens here |

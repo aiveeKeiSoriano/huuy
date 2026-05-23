@@ -23,3 +23,17 @@ Wanted the splash screen to have an animation, but the native splash screen API 
 **Decision:** Changed the native splash screen to be blank (solid color), then built a fake splash screen inside the app using an animated text sequence. This custom screen shows on app open, giving full control over timing and animation style.
 
 ---
+
+## Story 2: Notification Buttons That Wasn't Worth It
+
+### The Notification Button Trap
+
+The idea was to add Snooze and Delete action buttons directly on the notification — so you could handle an alarm without opening the app. The approaches was:
+
+A new `AlarmActionReceiver` in Kotlin would catch the button taps and handle snooze/delete entirely natively — updating SQLite directly, rescheduling or cancelling AlarmManager, and dismissing the notification without touching the app.
+
+But it was trashed because the snooze and delete logic already lives in the JS action layer — coordinating AlarmManager, SQLite, and any future concerns. Doing it again in Kotlin means maintaining two implementations of the same thing. If snooze duration changes, or the reminder schema changes, or the AlarmManager call changes, that's two places to update.
+
+**The accepted UX:** Dismissing the notification is fine. If the user doesn't want to deal with the alarm screen, they swipe the notification away. The reminder stays in the list with a missed alarm marker. They open the app later, see it, and snooze or delete from there. That flow already works.
+
+---
