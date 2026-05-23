@@ -6,10 +6,10 @@ import { makeLogger } from '../utils/log';
 const { AlarmModule, NavigationModule } = NativeModules;
 const log = makeLogger('alarmService');
 
-export async function scheduleAlarm(reminder: Reminder): Promise<void> {
+export async function scheduleAlarm(reminder: Reminder, notificationTitle = ''): Promise<void> {
   log.info(`schedule id=${reminder.id} at=${reminder.triggerTime}`);
   try {
-    await AlarmModule.scheduleAlarm(reminder.id, reminder.title, reminder.triggerTime);
+    await AlarmModule.scheduleAlarm(reminder.id, reminder.title, reminder.triggerTime, notificationTitle);
   } catch (err) {
     log.error(`schedule failed id=${reminder.id}`, err);
     throw err;

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { useTranslation } from "react-i18next";
 
 import type { Reminder } from "../src/types/reminder";
 import { Text } from "../src/components/Text";
@@ -23,7 +24,7 @@ import {
   MIN_REMINDER_LEAD_MS,
   DEFAULT_REMINDER_LEAD_MS,
   REMINDER_CONFLICT_WINDOW_MS,
-  ERRORS,
+  minLeadLabel,
 } from "../src/constants";
 
 function computeNextOccurrence(hours: number, minutes: number): number {
@@ -46,15 +47,18 @@ function formatTime(ts: number): string {
 
 export default function CreateScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { id, source } = useLocalSearchParams<{
     id?: string;
     source?: string;
   }>();
 
   const [title, setTitle] = useState("");
-  const [triggerTime, setTriggerTime] = useState<number | null>(() =>
-    id ? null : Date.now() + DEFAULT_REMINDER_LEAD_MS,
-  );
+  const [triggerTime, setTriggerTime] = useState<number | null>(() => {
+    if (id) return null;
+    const ms = Date.now() + DEFAULT_REMINDER_LEAD_MS;
+    return Math.floor(ms / 60_000) * 60_000;
+  });
   const [titleError, setTitleError] = useState("");
   const [timeError, setTimeError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -64,7 +68,7 @@ export default function CreateScreen() {
   const onReminderLoaded = useCallback(
     (reminder: Reminder | null) => {
       if (!reminder) {
-        showToast(ERRORS.REMINDER_GONE, { persistent: true });
+        showToast(t('errors.reminderGone'), { persistent: true });
         router.back();
         return;
       }
@@ -72,7 +76,7 @@ export default function CreateScreen() {
       setTriggerTime(reminder.triggerTime);
       setLoading(false);
     },
-    [router, showToast],
+    [router, showToast, t],
   );
 
   useEffect(() => {
@@ -95,19 +99,19 @@ export default function CreateScreen() {
   };
 
   async function validateReminder(
-    t: string,
+    titleVal: string,
     time: number | null,
   ): Promise<boolean> {
-    if (!t.trim()) {
-      setTitleError(ERRORS.TITLE_REQUIRED);
+    if (!titleVal.trim()) {
+      setTitleError(t('errors.titleRequired'));
       return false;
     }
     if (time === null) {
-      setTimeError(ERRORS.TIME_REQUIRED);
+      setTimeError(t('errors.timeRequired'));
       return false;
     }
     if (time - Date.now() < MIN_REMINDER_LEAD_MS) {
-      setTimeError(ERRORS.TIME_TOO_SOON);
+      setTimeError(t('errors.timeTooSoon', { leadLabel: minLeadLabel() }));
       return false;
     }
 
@@ -117,7 +121,7 @@ export default function CreateScreen() {
       return Math.abs(r.triggerTime - time) < REMINDER_CONFLICT_WINDOW_MS;
     });
     if (conflict) {
-      setTimeError(ERRORS.TIME_CONFLICT);
+      setTimeError(t('errors.timeConflict'));
       return false;
     }
 
@@ -162,13 +166,13 @@ export default function CreateScreen() {
           <ArrowLeftIcon size={28} color={colors.primary} />
         </TouchableOpacity>
 
-        <Text style={styles.label}>huuy remind mo nga sakin yung:</Text>
+        <Text style={styles.label}>{t('createLabel')}</Text>
 
         <TextInput
           style={styles.input}
           value={title}
-          onChangeText={(t) => {
-            setTitle(t);
+          onChangeText={(v) => {
+            setTitle(v);
             setTitleError("");
           }}
           multiline
@@ -182,7 +186,7 @@ export default function CreateScreen() {
           <Text
             style={[styles.timeText, !triggerTime && styles.timePlaceholder]}
           >
-            {triggerTime ? formatTime(triggerTime) : "pick a time"}
+            {triggerTime ? formatTime(triggerTime) : t('timePlaceholder')}
           </Text>
         </TouchableOpacity>
         {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
@@ -199,7 +203,7 @@ export default function CreateScreen() {
         {saving ? (
           <ActivityIndicator color={colors.background} />
         ) : (
-          <Text style={styles.saveText}>save</Text>
+          <Text style={styles.saveText}>{t('save')}</Text>
         )}
       </TouchableOpacity>
     </KeyboardAvoidingView>

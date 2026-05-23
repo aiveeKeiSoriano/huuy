@@ -9,9 +9,9 @@ import { useAppReady } from '@/hooks/useAppReady';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
-  const { fontsLoaded, showSplash } = useAppReady();
+  const { fontsLoaded, appInitialized, showSplash } = useAppReady();
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !appInitialized) return null;
 
   return (
     <SafeAreaView style={styles.root}>

@@ -25,16 +25,17 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
     private val alarmManager get() =
         reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-    private fun buildPendingIntent(id: String, title: String = ""): PendingIntent {
+    private fun buildPendingIntent(id: String, title: String = "", notificationTitle: String = ""): PendingIntent {
         val intent = Intent(reactContext, AlarmReceiver::class.java).apply {
             putExtra(EXTRA_REMINDER_ID, id)
             if (title.isNotEmpty()) putExtra(EXTRA_REMINDER_TITLE, title)
+            if (notificationTitle.isNotEmpty()) putExtra(EXTRA_NOTIFICATION_TITLE, notificationTitle)
         }
         return PendingIntent.getBroadcast(reactContext, id.hashCode(), intent, PENDING_INTENT_FLAGS)
     }
 
     @ReactMethod
-    fun scheduleAlarm(id: String, title: String, triggerTime: Double, promise: Promise) {
+    fun scheduleAlarm(id: String, title: String, triggerTime: Double, notificationTitle: String, promise: Promise) {
         Log.d(TAG, "scheduleAlarm called — id=$id triggerTime=$triggerTime")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
@@ -43,7 +44,7 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
             return
         }
 
-        val pendingIntent = buildPendingIntent(id, title)
+        val pendingIntent = buildPendingIntent(id, title, notificationTitle)
         alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(triggerTime.toLong(), pendingIntent), pendingIntent)
         Log.d(TAG, "scheduleAlarm registered with AlarmManager — id=$id")
         promise.resolve(null)

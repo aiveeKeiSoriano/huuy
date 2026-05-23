@@ -3,6 +3,8 @@ import { Linking } from 'react-native';
 import { useFonts, LilitaOne_400Regular } from '@expo-google-fonts/lilita-one';
 
 import { requestNotificationPermission } from '../utils/requestNotificationPermission';
+import { getSettings } from '../services/storageService';
+import i18n from '../i18n';
 
 const SKIP_SPLASH_ROUTES = ['huuy://alarm', 'huuy://create'];
 
@@ -10,19 +12,27 @@ export function useAppReady() {
   const [fontsLoaded] = useFonts({ LilitaOne_400Regular });
   const [showSplash, setShowSplash] = useState(true);
   const [skipSplash, setSkipSplash] = useState(false);
+  const [appInitialized, setAppInitialized] = useState(false);
 
   useEffect(() => {
-    requestNotificationPermission();
-    Linking.getInitialURL().then((url) => {
+    async function init() {
+      requestNotificationPermission();
+      const [url, settings] = await Promise.all([
+        Linking.getInitialURL(),
+        getSettings(),
+      ]);
       if (SKIP_SPLASH_ROUTES.some((route) => url?.startsWith(route))) setSkipSplash(true);
-    });
+      await i18n.changeLanguage(settings.language);
+      setAppInitialized(true);
+    }
+    init();
   }, []);
 
   useEffect(() => {
-    if (!fontsLoaded) return;
-    const timer = setTimeout(() => setShowSplash(false), skipSplash ? 0 : 2500);
+    if (!fontsLoaded || !appInitialized || skipSplash) return;
+    const timer = setTimeout(() => setShowSplash(false), 2500);
     return () => clearTimeout(timer);
-  }, [fontsLoaded, skipSplash]);
+  }, [fontsLoaded, appInitialized, skipSplash]);
 
-  return { fontsLoaded, showSplash };
+  return { fontsLoaded, appInitialized, showSplash: !skipSplash && showSplash };
 }

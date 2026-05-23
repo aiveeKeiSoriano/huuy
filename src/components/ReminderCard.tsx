@@ -1,4 +1,5 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { colors, spacing, radii, borderWidth } from '../theme';
 import type { Reminder } from '../types/reminder';
@@ -12,25 +13,24 @@ type Props = {
   onEdit: (id: string) => void;
 };
 
-function formatTime(triggerTime: number): string {
-  const trigger = new Date(triggerTime);
-  const timeStr = trigger.toLocaleTimeString([], {
+export function ReminderCard({ reminder, onDelete, onEdit }: Props) {
+  const { t } = useTranslation();
+
+  const timeStr = new Date(reminder.triggerTime).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
   });
-  const isToday = trigger.toDateString() === new Date().toDateString();
-  return isToday ? `Today, ${timeStr}` : `Tomorrow, ${timeStr}`;
-}
+  const isToday = new Date(reminder.triggerTime).toDateString() === new Date().toDateString();
+  const formattedTime = isToday ? `${t('today')}, ${timeStr}` : `${t('tomorrow')}, ${timeStr}`;
 
-export function ReminderCard({ reminder, onDelete, onEdit }: Props) {
   return (
     <TouchableOpacity
       style={[styles.card, reminder.missedAlarm && styles.cardMissed]}
       onPress={() => onEdit(reminder.id)}
       activeOpacity={0.8}
     >
-      <Text style={styles.label}>yung</Text>
+      <Text style={styles.label}>{t('cardLabel')}</Text>
       <View style={styles.row}>
         <View style={styles.titleBlock}>
           <View style={styles.textBlock}>
@@ -40,7 +40,7 @@ export function ReminderCard({ reminder, onDelete, onEdit }: Props) {
                 <ExclamationIcon size={24} color={colors.primary} />
               )}
             </View>
-            <Text style={styles.time}>{formatTime(reminder.triggerTime)}</Text>
+            <Text style={styles.time}>{formattedTime}</Text>
           </View>
         </View>
         <TouchableOpacity

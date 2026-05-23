@@ -1,7 +1,7 @@
 import { deleteReminder } from '../services/storageService';
 import { cancelAlarm } from '../services/alarmService';
 import type { Result } from '../types/result';
-import { ERRORS } from '../constants';
+import i18n from '../i18n';
 
 export async function deleteReminderAction(id: string): Promise<Result> {
   try {
@@ -9,6 +9,6 @@ export async function deleteReminderAction(id: string): Promise<Result> {
     await deleteReminder(id);
     return { success: true, data: undefined };
   } catch {
-    return { success: false, error: ERRORS.DELETE_REMINDER };
+    return { success: false, error: i18n.t('errors.deleteReminder') };
   }
 }

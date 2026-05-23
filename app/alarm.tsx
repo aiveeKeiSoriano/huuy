@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { BackHandler, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 import { Text } from "../src/components/Text";
 import { Loading } from "../src/components/Loading";
@@ -10,7 +11,6 @@ import { notifyAlarmReady } from "../src/services/alarmService";
 import { snoozeReminderAction } from "../src/actions/snoozeReminderAction";
 import { deleteReminderAction } from "../src/actions/deleteReminderAction";
 import { colors, spacing, radii } from "../src/theme";
-import { ERRORS } from "../src/constants";
 import { makeLogger } from "../src/utils/log";
 import type { Reminder } from "../src/types/reminder";
 
@@ -26,6 +26,7 @@ function formatTime(ts: number): string {
 
 export default function AlarmScreen() {
   const { reminderId } = useLocalSearchParams<{ reminderId: string }>();
+  const { t } = useTranslation();
   const [reminder, setReminder] = useState<Reminder | null | undefined>(
     reminderId ? undefined : null,
   );
@@ -96,13 +97,13 @@ export default function AlarmScreen() {
       <>
         <Stack.Screen options={{ gestureEnabled: false }} />
         <View style={[styles.container, styles.center]}>
-          <Text style={styles.errorText}>{ERRORS.REMINDER_GONE}</Text>
+          <Text style={styles.errorText}>{t('errors.reminderGone')}</Text>
           <TouchableOpacity
             onPress={() => BackHandler.exitApp()}
             style={styles.closeButton}
             activeOpacity={0.8}
           >
-            <Text style={styles.closeText}>close</Text>
+            <Text style={styles.closeText}>{t('close')}</Text>
           </TouchableOpacity>
         </View>
       </>
@@ -114,7 +115,7 @@ export default function AlarmScreen() {
       <Stack.Screen options={{ gestureEnabled: false }} />
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.label}>huuuyyyy yung ano, yung</Text>
+          <Text style={styles.label}>{t('alarmLabel')}</Text>
           <Text style={styles.title}>{reminder.title}</Text>
           <Text style={styles.currentTime}>{formatTime(now)}</Text>
         </View>

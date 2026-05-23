@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -14,6 +15,7 @@ import type { Reminder } from '../src/types/reminder';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,13 +75,13 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <ReminderCard
               reminder={item}
-              onDelete={(id) => showAlert('delete this reminder?', () => handleDelete(id))}
+              onDelete={(id) => showAlert(t('deleteConfirm'), () => handleDelete(id))}
               onEdit={handleEdit}
             />
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>wala langgg...</Text>
+              <Text style={styles.emptyText}>{t('emptyState')}</Text>
             </View>
           }
           refreshControl={

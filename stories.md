@@ -34,6 +34,6 @@ A new `AlarmActionReceiver` in Kotlin would catch the button taps and handle sno
 
 But it was trashed because the snooze and delete logic already lives in the JS action layer — coordinating AlarmManager, SQLite, and any future concerns. Doing it again in Kotlin means maintaining two implementations of the same thing. If snooze duration changes, or the reminder schema changes, or the AlarmManager call changes, that's two places to update.
 
-**The accepted UX:** Dismissing the notification is fine. If the user doesn't want to deal with the alarm screen, they swipe the notification away. The reminder stays in the list with a missed alarm marker. They open the app later, see it, and snooze or delete from there. That flow already works.
+**The accepted UX:** Dismissing the notification is fine. If the user doesn't want to deal with the alarm screen, they swipe the notification away. The reminder stays in the list with a missed alarm marker. They open the app later, see it, and snooze or delete from there. That flow already works. A notification without actions is still enough to remind the user.
 
 ---

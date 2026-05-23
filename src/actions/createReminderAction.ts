@@ -3,7 +3,7 @@ import uuid from 'react-native-uuid';
 import { saveReminder, deleteReminder } from '../services/storageService';
 import { scheduleAlarm } from '../services/alarmService';
 import type { Result } from '../types/result';
-import { ERRORS } from '../constants';
+import i18n from '../i18n';
 
 export async function createReminderAction(title: string, triggerTime: number): Promise<Result> {
   const reminder = {
@@ -16,14 +16,14 @@ export async function createReminderAction(title: string, triggerTime: number): 
   try {
     await saveReminder(reminder);
   } catch {
-    return { success: false, error: ERRORS.CREATE_REMINDER };
+    return { success: false, error: i18n.t('errors.createReminder') };
   }
 
   try {
-    await scheduleAlarm(reminder);
+    await scheduleAlarm(reminder, i18n.t('notificationTitle'));
     return { success: true, data: undefined };
   } catch {
     await deleteReminder(reminder.id).catch(() => {});
-    return { success: false, error: ERRORS.SCHEDULE_ALARM };
+    return { success: false, error: i18n.t('errors.scheduleAlarm') };
   }
 }

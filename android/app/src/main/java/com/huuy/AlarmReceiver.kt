@@ -27,14 +27,15 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
         val reminderTitle = intent.getStringExtra(EXTRA_REMINDER_TITLE) ?: ""
+        val notificationTitle = intent.getStringExtra(EXTRA_NOTIFICATION_TITLE)?.ifEmpty { null } ?: "Huuuuy yung"
 
-        Log.d(TAG, "AlarmReceiver — reminderId=$reminderId title=$reminderTitle")
+        Log.d(TAG, "AlarmReceiver — reminderId=$reminderId title=$reminderTitle notificationTitle=$notificationTitle")
 
         if (!checkPermissions(context)) return
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         setupChannel(notificationManager)
-        postNotification(context, notificationManager, reminderId, reminderTitle)
+        postNotification(context, notificationManager, reminderId, reminderTitle, notificationTitle)
     }
 
     private fun checkPermissions(context: Context): Boolean {
@@ -64,7 +65,7 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun postNotification(context: Context, notificationManager: NotificationManager, reminderId: String, reminderTitle: String) {
+    private fun postNotification(context: Context, notificationManager: NotificationManager, reminderId: String, reminderTitle: String, notificationTitle: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val canUse = notificationManager.canUseFullScreenIntent()
             Log.d(TAG, "AlarmReceiver — canUseFullScreenIntent=$canUse")
@@ -87,7 +88,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
             val notification = Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle("Huuuuy yung")
+                .setContentTitle(notificationTitle)
                 .setContentText(reminderTitle.ifEmpty { "ano!" })
                 .setCategory(Notification.CATEGORY_ALARM)
                 .setFullScreenIntent(fullScreenPendingIntent, true)

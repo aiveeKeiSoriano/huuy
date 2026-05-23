@@ -96,20 +96,20 @@ export async function snoozeReminder(id: string, newTriggerTime: number): Promis
 
 export async function getSettings(): Promise<Settings> {
   const database = await getDb();
-  const row = await database.getFirstAsync<{ value: string }>(
-    'SELECT value FROM settings WHERE key = ?',
-    'snooze_duration',
-  );
+  const [snoozeRow, langRow] = await Promise.all([
+    database.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', 'snooze_duration'),
+    database.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', 'language'),
+  ]);
   return {
-    snoozeDuration: row ? parseInt(row.value, 10) : DEFAULT_SNOOZE_DURATION,
+    snoozeDuration: snoozeRow ? parseInt(snoozeRow.value, 10) : DEFAULT_SNOOZE_DURATION,
+    language: (langRow?.value ?? 'tl') as Settings['language'],
   };
 }
 
 export async function saveSettings(settings: Settings): Promise<void> {
   const database = await getDb();
-  await database.runAsync(
-    'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-    'snooze_duration',
-    String(settings.snoozeDuration),
-  );
+  await Promise.all([
+    database.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', 'snooze_duration', String(settings.snoozeDuration)),
+    database.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', 'language', settings.language),
+  ]);
 }

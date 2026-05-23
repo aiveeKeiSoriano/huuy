@@ -113,25 +113,41 @@ describe('snoozeReminder', () => {
 });
 
 describe('getSettings', () => {
-  it('returns DEFAULT_SNOOZE_DURATION when no row exists', async () => {
-    mockDb.getFirstAsync.mockResolvedValueOnce(null);
+  it('returns defaults when no rows exist', async () => {
     const settings = await getSettings();
     expect(settings.snoozeDuration).toBe(DEFAULT_SNOOZE_DURATION);
+    expect(settings.language).toBe('tl');
   });
 
-  it('parses stored value from settings table', async () => {
-    mockDb.getFirstAsync.mockResolvedValueOnce({ value: '10' });
+  it('parses stored snoozeDuration', async () => {
+    mockDb.getFirstAsync.mockResolvedValueOnce({ value: '10' }); // snooze_duration
+    // language query falls to base mock → null → 'tl'
     const settings = await getSettings();
     expect(settings.snoozeDuration).toBe(10);
+  });
+
+  it('parses stored language', async () => {
+    mockDb.getFirstAsync.mockResolvedValueOnce(null);           // snooze_duration → default
+    mockDb.getFirstAsync.mockResolvedValueOnce({ value: 'en' }); // language
+    const settings = await getSettings();
+    expect(settings.language).toBe('en');
   });
 });
 
 describe('saveSettings', () => {
   it('stores snoozeDuration as a string under snooze_duration key', async () => {
-    await saveSettings({ snoozeDuration: 15 });
+    await saveSettings({ snoozeDuration: 15, language: 'tl' });
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT OR REPLACE INTO settings'),
       'snooze_duration', '15',
+    );
+  });
+
+  it('stores language under language key', async () => {
+    await saveSettings({ snoozeDuration: 5, language: 'en' });
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT OR REPLACE INTO settings'),
+      'language', 'en',
     );
   });
 });
