@@ -12,32 +12,29 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import java.lang.ref.WeakReference
 
 class AlarmModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     companion object {
-        private const val TAG = "Huuy"
-        @Volatile var pendingAlarmActivity: AlarmActivity? = null
+        @Volatile var pendingAlarmActivity: WeakReference<AlarmActivity>? = null
     }
 
     override fun getName(): String = "AlarmModule"
 
+    private val alarmManager get() =
+        reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
     private fun buildPendingIntent(id: String): PendingIntent {
         val intent = Intent(reactContext, AlarmReceiver::class.java).apply {
-            putExtra("reminderId", id)
+            putExtra(EXTRA_REMINDER_ID, id)
         }
-        return PendingIntent.getBroadcast(
-            reactContext,
-            id.hashCode(),
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        return PendingIntent.getBroadcast(reactContext, id.hashCode(), intent, PENDING_INTENT_FLAGS)
     }
 
     @ReactMethod
     fun scheduleAlarm(id: String, triggerTime: Double, promise: Promise) {
         Log.d(TAG, "scheduleAlarm called — id=$id triggerTime=$triggerTime")
-        val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
             Log.e(TAG, "scheduleAlarm FAILED — exact alarm permission not granted")
@@ -54,7 +51,6 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
     @ReactMethod
     fun cancelAlarm(id: String) {
         Log.d(TAG, "cancelAlarm called — id=$id")
-        val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(buildPendingIntent(id))
         Log.d(TAG, "cancelAlarm done — id=$id")
     }
@@ -62,7 +58,7 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
     @ReactMethod
     fun notifyAlarmReady() {
         Log.d(TAG, "notifyAlarmReady called — pendingAlarmActivity=$pendingAlarmActivity")
-        val activity = pendingAlarmActivity ?: run {
+        val activity = pendingAlarmActivity?.get() ?: run {
             Log.w(TAG, "notifyAlarmReady — no pending AlarmActivity to finish")
             return
         }

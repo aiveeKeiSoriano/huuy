@@ -14,7 +14,6 @@ import android.util.Log
 class AlarmReceiver : BroadcastReceiver() {
 
     companion object {
-        private const val TAG = "Huuy"
         const val CHANNEL_ID = "huuy_alarms"
 
         fun notificationId(reminderId: String) = reminderId.hashCode()
@@ -23,32 +22,33 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "AlarmReceiver.onReceive fired — action=${intent.action}")
 
-        val reminderId = intent.getStringExtra("reminderId") ?: run {
+        val reminderId = intent.getStringExtra(EXTRA_REMINDER_ID) ?: run {
             Log.e(TAG, "AlarmReceiver — reminderId extra missing, aborting")
             return
         }
 
         Log.d(TAG, "AlarmReceiver — reminderId=$reminderId")
 
+        if (!checkPermissions(context)) return
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        setupChannel(notificationManager)
+        postNotification(context, notificationManager, reminderId)
+    }
+
+    private fun checkPermissions(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             Log.d(TAG, "AlarmReceiver — POST_NOTIFICATIONS granted=$granted")
             if (!granted) {
                 Log.e(TAG, "AlarmReceiver — POST_NOTIFICATIONS not granted, notification will be silently dropped")
-                return
+                return false
             }
         }
+        return true
+    }
 
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val canUse = notificationManager.canUseFullScreenIntent()
-            Log.d(TAG, "AlarmReceiver — canUseFullScreenIntent=$canUse")
-            if (!canUse) {
-                Log.e(TAG, "AlarmReceiver — USE_FULL_SCREEN_INTENT not granted, alarm screen will not appear over lock screen")
-            }
-        }
-
+    private fun setupChannel(notificationManager: NotificationManager) {
         try {
             val channel = NotificationChannel(CHANNEL_ID, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
                 setBypassDnd(true)
@@ -59,17 +59,27 @@ class AlarmReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             Log.e(TAG, "AlarmReceiver — failed to create notification channel: ${e.message}", e)
         }
+    }
+
+    private fun postNotification(context: Context, notificationManager: NotificationManager, reminderId: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val canUse = notificationManager.canUseFullScreenIntent()
+            Log.d(TAG, "AlarmReceiver — canUseFullScreenIntent=$canUse")
+            if (!canUse) {
+                Log.e(TAG, "AlarmReceiver — USE_FULL_SCREEN_INTENT not granted, alarm screen will not appear over lock screen")
+            }
+        }
 
         try {
-            val fullScreenIntent = Intent(context, AlarmActivity::class.java).apply {
-                putExtra("reminderId", reminderId)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            val nId = notificationId(reminderId)
             val fullScreenPendingIntent = PendingIntent.getActivity(
                 context,
-                notificationId(reminderId),
-                fullScreenIntent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                nId,
+                Intent(context, AlarmActivity::class.java).apply {
+                    putExtra(EXTRA_REMINDER_ID, reminderId)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+                PENDING_INTENT_FLAGS
             )
 
             val notification = Notification.Builder(context, CHANNEL_ID)
@@ -82,7 +92,6 @@ class AlarmReceiver : BroadcastReceiver() {
                 .setAutoCancel(false)
                 .build()
 
-            val nId = notificationId(reminderId)
             notificationManager.notify(nId, notification)
             Log.d(TAG, "AlarmReceiver — notification posted id=$nId")
         } catch (e: Exception) {

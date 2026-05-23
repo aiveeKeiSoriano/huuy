@@ -359,11 +359,19 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 - Extends `ReactContextBaseJavaModule`
 - Exposes `scheduleAlarm(id, triggerTime, promise)` to JavaScript — promise-based bridge; resolves `null` on success, rejects with `PERMISSION_DENIED` if `canScheduleExactAlarms()` returns false; allows JS to `await` the call and handle errors
 - Exposes `cancelAlarm(id)` to JavaScript — fire-and-forget, no promise
-- Exposes `notifyAlarmReady()` to JavaScript — called by `alarm.tsx` on mount; calls `pendingAlarmActivity.finish()` via a `Handler` on the main looper to dismiss `AlarmActivity`; `pendingAlarmActivity` is a companion object field set by `AlarmActivity.onCreate()` and cleared in `onDestroy()`
+- Exposes `notifyAlarmReady()` to JavaScript — called by `alarm.tsx` on mount; calls `pendingAlarmActivity.finish()` via a `Handler` on the main looper to dismiss `AlarmActivity`; `pendingAlarmActivity` is a `WeakReference<AlarmActivity>?` companion field — set by `AlarmActivity.onCreate()` and cleared in `onDestroy()`; `WeakReference` prevents memory leaks if Android recreates the Activity within the same process without clearing the field
+- `alarmManager` is a computed property (not stored) — fetched via `getSystemService` on each call; avoids repeating the cast in every method
 - Calls `AlarmManager.setAlarmClock()` — highest priority alarm tier on Android
 - All `PendingIntent` instances must be created with `FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT` — required on Android 12+ (API 31+); without `FLAG_IMMUTABLE`, `PendingIntent.getBroadcast()` throws `IllegalArgumentException`
 - Before calling `setAlarmClock()`, check `AlarmManager.canScheduleExactAlarms()` — if `false`, reject the promise so the screen can redirect the user to `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM`
 - Registered via `AlarmPackage.kt` in `MainApplication.kt`
+
+#### `Constants.kt` — Shared Kotlin Constants
+- Package-internal (`internal`) constants shared across all alarm Kotlin files
+- `TAG` — log tag `"Huuy"` used in every `Log.d` / `Log.e` call
+- `EXTRA_REMINDER_ID` — Intent extra key `"reminderId"` — single definition prevents silent key mismatches across `AlarmModule`, `AlarmReceiver`, and `AlarmActivity`
+- `ALARM_DEEP_LINK_BASE` — `"huuy://alarm?reminderId="` — concatenated with `reminderId` in `AlarmActivity`
+- `PENDING_INTENT_FLAGS` — `FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT` — used in both `AlarmModule` and `AlarmReceiver`
 
 #### `NavigationModule.kt` — Home Navigation Bridge
 - Extends `ReactContextBaseJavaModule`
@@ -375,10 +383,10 @@ Called by `app/index.tsx` on mount and after any mutation. Coordinates the two-s
 #### `AlarmReceiver.kt` — Broadcast Receiver
 - Wakes when the OS fires the `PendingIntent` at trigger time
 - Extracts `reminderId` from the Intent extras — title is not needed here, `alarm.tsx` fetches the full reminder from SQLite
-- Creates notification channel `huuy_alarms` on every call (idempotent — safe to repeat)
-- Posts a high-priority `CATEGORY_ALARM` notification with a `fullScreenIntent` pointing to `AlarmActivity` — this is required on Android 10+ to show a full-screen UI from a background receiver; directly starting an activity from a background process is blocked by the OS
-- On Android 13+ checks `POST_NOTIFICATIONS` permission before posting — logs and aborts if not granted
-- On Android 14+ checks `canUseFullScreenIntent()` — logs a warning if not granted (alarm UI will not appear over lock screen, but continues)
+- `onReceive()` delegates to three private methods: `checkPermissions()`, `setupChannel()`, `postNotification()` — each does one thing
+- `checkPermissions()` — on Android 13+ checks `POST_NOTIFICATIONS`; returns `false` and aborts `onReceive` if not granted
+- `setupChannel()` — creates notification channel `huuy_alarms` (idempotent — safe to repeat on every call)
+- `postNotification()` — on Android 14+ logs a warning if `canUseFullScreenIntent()` is not granted; posts a high-priority `CATEGORY_ALARM` notification with a `fullScreenIntent` pointing to `AlarmActivity` — required on Android 10+ to show full-screen UI from a background receiver; directly starting an activity from background is blocked by the OS
 - `notificationId(reminderId)` companion function hashes `reminderId` to an `Int` — shared with `AlarmActivity` so both sides reference the same notification
 - Registered in `AndroidManifest.xml` with `android:exported="true"`
 
@@ -477,9 +485,10 @@ Huuy/
 ├── android/
 │   └── app/src/main/
 │       ├── java/.../
-│       │   ├── AlarmModule.kt        # JS to native bridge for AlarmManager; FLAG_IMMUTABLE required
+│       │   ├── Constants.kt          # Shared internal constants: TAG, EXTRA_REMINDER_ID, ALARM_DEEP_LINK_BASE, PENDING_INTENT_FLAGS
+│       │   ├── AlarmModule.kt        # JS to native bridge for AlarmManager; FLAG_IMMUTABLE required; WeakReference for pendingAlarmActivity
 │       │   ├── NavigationModule.kt   # JS to native bridge for goHome()
-│       │   ├── AlarmReceiver.kt      # BroadcastReceiver — catches alarm fires, extracts reminderId only
+│       │   ├── AlarmReceiver.kt      # BroadcastReceiver — catches alarm fires, extracts reminderId only; split into checkPermissions/setupChannel/postNotification
 │       │   ├── AlarmActivity.kt      # Wakes screen and launches deep link at alarm fire time
 │       │   ├── AlarmPackage.kt       # Registers AlarmModule + NavigationModule with React Native
 │       │   ├── BootReceiver.kt       # Reschedules alarms after device restart
@@ -621,8 +630,8 @@ Huuy/
 - [x] 11. `src/actions/deleteReminderAction.ts` — used by `app/alarm.tsx` trash and `ReminderCard` trash
 - [x] 12. `src/actions/snoozeReminderAction.ts` — used by `app/alarm.tsx` snooze button; reads snoozeDuration from settings internally
 - [x] 13. `app/create.tsx` — "remind mo nga sakin yung:" input, native time picker, `source` param handling, all three save validations; requires actions from steps 9–10
-- [ ] 14. `AlarmReceiver.kt` — catches the broadcast when alarm fires
-- [ ] 15. `AlarmActivity.kt` — wakes screen, handles locked/unlocked via window flags, launches deep link
+- [x] 14. `AlarmReceiver.kt` — catches the broadcast when alarm fires; refactored into `checkPermissions()`, `setupChannel()`, `postNotification()` private methods
+- [x] 15. `AlarmActivity.kt` — wakes screen, handles locked/unlocked via window flags, launches deep link; `pendingAlarmActivity` uses `WeakReference` to prevent Activity memory leaks
 - [ ] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
 - [ ] 17. `BootReceiver.kt` — reschedule on device restart
 - [ ] 18. `app/settings.tsx` — snooze duration config
@@ -888,6 +897,8 @@ npx uri-scheme open 'huuy://alarm?reminderId=test' --android
 | AlarmScreen UI | Single `app/alarm.tsx` for both states | `setShowWhenLocked` and `setTurnScreenOn` are OS window flags, not UI flags — same screen renders regardless |
 | AlarmScreen exit | `BackHandler.exitApp()` after await | Returns user to pre-alarm context without assuming a back stack; safe for snooze because AlarmManager is registered before exit; `await` before exit is sufficient in practice — revisit only if write failures appear during testing |
 | AlarmActivity finish timing | `notifyAlarmReady()` callback + 5s timeout | Avoids race where `finish()` drops the deep link before React Native initialises on cold launch; JS calls `notifyAlarmReady()` on mount for the fast path; 5-second `Handler` timeout is the safety net if JS never mounts; `pendingAlarmActivity` companion field used instead of `currentActivity` to ensure the correct instance is finished |
+| `pendingAlarmActivity` type | `WeakReference<AlarmActivity>?` | Hard reference to an Activity in a long-lived object is a memory leak — if Android recreates the Activity (rotation, config change) without clearing the field, the old instance and everything attached to it (views, window, context) cannot be GC'd; `WeakReference` lets GC reclaim the Activity when Android destroys it, while `get()` returns null if it's already gone |
+| Kotlin constants | `Constants.kt` with `internal` visibility | `TAG`, `EXTRA_REMINDER_ID`, `ALARM_DEEP_LINK_BASE`, `PENDING_INTENT_FLAGS` are shared across three files — extracting them to one place prevents silent mismatches (e.g. a typo in `"reminderId"` would silently break the alarm flow across five call sites) |
 | Snooze duration in action | Read from SQLite internally | `snoozeReminderAction` calls `storageService.getSettings()` — callers pass only `reminderId` |
 | PendingIntent flag | `FLAG_IMMUTABLE` | Required on Android 12+ (API 31+) — prevents `IllegalArgumentException` on `PendingIntent.getBroadcast()` |
 | Exact alarm permission | Runtime check + redirect | Android 14+ requires user grant via `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` — checked in `AlarmModule.kt` before every `setAlarmClock()` call |
