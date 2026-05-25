@@ -75,7 +75,10 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <ReminderCard
               reminder={item}
-              onDelete={(id) => showAlert(t('deleteConfirm'), () => handleDelete(id))}
+              onDelete={(id) => showAlert(t('deleteConfirm'), [
+                  { label: t('cancel'), style: 'cancel' },
+                  { label: t('delete'), onPress: () => handleDelete(id) },
+                ])}
               onEdit={handleEdit}
             />
           )}

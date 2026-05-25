@@ -640,7 +640,7 @@ Huuy/
 - [x] 17. `BootReceiver.kt` — reschedule on device restart
 - [x] 18. `app/settings.tsx` — snooze duration config
 - [x] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/` — home screen widget, build last
-- [ ] 20. **Permission gate** — block app access until both `POST_NOTIFICATIONS` (Android 13+) and `USE_FULL_SCREEN_INTENT` (Android 14+) are granted; shown on every launch as long as either permission is missing; app must not render the main screen until both are confirmed
+- [x] 20. **Permission gate** — block app access until both `POST_NOTIFICATIONS` (Android 13+) and `USE_FULL_SCREEN_INTENT` (Android 14+) are granted; shown on every launch as long as either permission is missing; app must not render the main screen until both are confirmed
   - Check both permissions during `useAppReady` init (after `requestNotificationPermission` runs)
   - Return a `missingPermissions` list from `useAppReady`
   - In `_layout.tsx`, render a dedicated full-screen "permission required" screen instead of the `<Stack>` when any permission is missing (not a modal/alert — a blocking wall)

@@ -1,6 +1,14 @@
 export default {
   save: 'save',
   close: 'close',
+  cancel: 'cancel',
+  delete: 'delete',
+  permissions: {
+    notificationMessage: 'Notifications is the core of the Huuy app. Please allow Huuy to send you notifications for your reminders.',
+    fullScreenMessage: 'To make sure you never miss a reminder, please allow Huuy to show reminders on your lock screen.',
+    openSettings: 'open settings',
+    allow: 'allow',
+  },
   today: 'Today',
   tomorrow: 'Tomorrow',
   emptyState: 'nothing here...',
