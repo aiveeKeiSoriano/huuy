@@ -16,7 +16,6 @@ import { Text } from "../src/components/Text";
 import { ArrowLeftIcon } from "../src/components/Icons";
 import { useToast } from "../src/components/Toast";
 import { getReminderById, getReminders } from "../src/services/storageService";
-import { goHome } from "../src/services/alarmService";
 import { createReminderAction } from "../src/actions/createReminderAction";
 import { editReminderAction } from "../src/actions/editReminderAction";
 import { colors, spacing, radii, fonts } from "../src/theme";
@@ -147,7 +146,7 @@ export default function CreateScreen() {
     }
 
     if (source === "widget") {
-      goHome();
+      router.replace('/');
     } else {
       router.back();
     }
@@ -159,7 +158,7 @@ export default function CreateScreen() {
     <KeyboardAvoidingView style={styles.outer} behavior="padding">
       <View style={styles.container}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => (source === 'widget' ? router.replace('/') : router.back())}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.back}
         >

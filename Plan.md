@@ -639,7 +639,7 @@ Huuy/
 - [x] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
 - [x] 17. `BootReceiver.kt` — reschedule on device restart
 - [x] 18. `app/settings.tsx` — snooze duration config
-- [ ] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/` — home screen widget, build last
+- [x] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/` — home screen widget, build last
 - [ ] 20. **Permission gate** — block app access until both `POST_NOTIFICATIONS` (Android 13+) and `USE_FULL_SCREEN_INTENT` (Android 14+) are granted; shown on every launch as long as either permission is missing; app must not render the main screen until both are confirmed
   - Check both permissions during `useAppReady` init (after `requestNotificationPermission` runs)
   - Return a `missingPermissions` list from `useAppReady`
