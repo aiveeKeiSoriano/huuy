@@ -51,6 +51,24 @@ export function openFullScreenIntentSettings(): void {
   }
 }
 
+export function saveAlarmForBoot(id: string, triggerTime: number, title: string, notificationTitle: string): void {
+  log.info(`saveAlarmForBoot id=${id}`);
+  try {
+    AlarmModule.saveAlarmForBoot(id, triggerTime, title, notificationTitle);
+  } catch (err) {
+    log.error(`saveAlarmForBoot failed id=${id}`, err);
+  }
+}
+
+export function removeAlarmForBoot(id: string): void {
+  log.info(`removeAlarmForBoot id=${id}`);
+  try {
+    AlarmModule.removeAlarmForBoot(id);
+  } catch (err) {
+    log.error(`removeAlarmForBoot failed id=${id}`, err);
+  }
+}
+
 export function goHome(): void {
   log.info('goHome');
   try {

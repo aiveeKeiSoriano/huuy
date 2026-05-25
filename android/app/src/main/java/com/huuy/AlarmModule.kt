@@ -81,6 +81,34 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
         }
     }
 
+    private fun bootPrefs() = reactContext.getSharedPreferences("huuy_alarms", Context.MODE_PRIVATE)
+
+    @ReactMethod
+    fun saveAlarmForBoot(id: String, triggerTime: Double, title: String, notificationTitle: String) {
+        val prefs = bootPrefs()
+        val ids = prefs.getStringSet("alarm_ids", emptySet())!!.toMutableSet().also { it.add(id) }
+        prefs.edit()
+            .putStringSet("alarm_ids", ids)
+            .putLong("${id}_time", triggerTime.toLong())
+            .putString("${id}_title", title)
+            .putString("${id}_notif", notificationTitle)
+            .apply()
+        Log.d(TAG, "saveAlarmForBoot — id=$id triggerTime=$triggerTime")
+    }
+
+    @ReactMethod
+    fun removeAlarmForBoot(id: String) {
+        val prefs = bootPrefs()
+        val ids = prefs.getStringSet("alarm_ids", emptySet())!!.toMutableSet().also { it.remove(id) }
+        prefs.edit()
+            .putStringSet("alarm_ids", ids)
+            .remove("${id}_time")
+            .remove("${id}_title")
+            .remove("${id}_notif")
+            .apply()
+        Log.d(TAG, "removeAlarmForBoot — id=$id")
+    }
+
     @ReactMethod
     fun notifyAlarmReady() {
         Log.d(TAG, "notifyAlarmReady called — pendingAlarmActivity=$pendingAlarmActivity")

@@ -1,7 +1,7 @@
 import uuid from 'react-native-uuid';
 
 import { saveReminder, deleteReminder } from '../services/storageService';
-import { scheduleAlarm } from '../services/alarmService';
+import { scheduleAlarm, saveAlarmForBoot } from '../services/alarmService';
 import type { Result } from '../types/result';
 import i18n from '../i18n';
 
@@ -21,6 +21,7 @@ export async function createReminderAction(title: string, triggerTime: number): 
 
   try {
     await scheduleAlarm(reminder, i18n.t('notificationTitle'));
+    saveAlarmForBoot(reminder.id, reminder.triggerTime, reminder.title, i18n.t('notificationTitle'));
     return { success: true, data: undefined };
   } catch {
     await deleteReminder(reminder.id).catch(() => {});

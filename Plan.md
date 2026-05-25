@@ -637,8 +637,8 @@ Huuy/
 - [x] 14. `AlarmReceiver.kt` — catches the broadcast when alarm fires; refactored into `checkPermissions()`, `setupChannel()`, `postNotification()` private methods
 - [x] 15. `AlarmActivity.kt` — wakes screen, handles locked/unlocked via window flags, launches deep link; `pendingAlarmActivity` uses `WeakReference` to prevent Activity memory leaks
 - [x] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
-- [ ] 17. `BootReceiver.kt` — reschedule on device restart
-- [ ] 18. `app/settings.tsx` — snooze duration config
+- [x] 17. `BootReceiver.kt` — reschedule on device restart
+- [x] 18. `app/settings.tsx` — snooze duration config
 - [ ] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/` — home screen widget, build last
 - [ ] 20. **Permission gate** — block app access until both `POST_NOTIFICATIONS` (Android 13+) and `USE_FULL_SCREEN_INTENT` (Android 14+) are granted; shown on every launch as long as either permission is missing; app must not render the main screen until both are confirmed
   - Check both permissions during `useAppReady` init (after `requestNotificationPermission` runs)
