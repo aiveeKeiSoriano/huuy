@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { useFonts, LilitaOne_400Regular } from '@expo-google-fonts/lilita-one';
 
 import { requestNotificationPermission } from '../utils/requestNotificationPermission';
+import { canUseFullScreenIntent } from '../services/alarmService';
 import { getSettings } from '../services/storageService';
 import i18n from '../i18n';
 
@@ -13,6 +14,7 @@ export function useAppReady() {
   const [showSplash, setShowSplash] = useState(true);
   const [skipSplash, setSkipSplash] = useState(false);
   const [appInitialized, setAppInitialized] = useState(false);
+  const [needsFullScreenPermission, setNeedsFullScreenPermission] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -21,8 +23,13 @@ export function useAppReady() {
         Linking.getInitialURL(),
         getSettings(),
       ]);
-      if (SKIP_SPLASH_ROUTES.some((route) => url?.startsWith(route))) setSkipSplash(true);
+      const isAlarmFlow = SKIP_SPLASH_ROUTES.some((route) => url?.startsWith(route));
+      if (isAlarmFlow) setSkipSplash(true);
       await i18n.changeLanguage(settings.language);
+      if (Platform.OS === 'android' && !isAlarmFlow) {
+        const granted = await canUseFullScreenIntent();
+        if (!granted) setNeedsFullScreenPermission(true);
+      }
       setAppInitialized(true);
     }
     init();
@@ -34,5 +41,5 @@ export function useAppReady() {
     return () => clearTimeout(timer);
   }, [fontsLoaded, appInitialized, skipSplash]);
 
-  return { fontsLoaded, appInitialized, showSplash: !skipSplash && showSplash };
+  return { fontsLoaded, appInitialized, showSplash: !skipSplash && showSplash, needsFullScreenPermission };
 }

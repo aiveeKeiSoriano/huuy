@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { useFocusEffect } from 'expo-router';
 import { Text } from '../src/components/Text';
 import { ArrowLeftIcon } from '../src/components/Icons';
 import { getSettings, saveSettings } from '../src/services/storageService';
+import { DEFAULT_SNOOZE_DURATION } from '../src/constants';
 import { colors, spacing, radii, fonts } from '../src/theme';
 import i18n from '../src/i18n';
 import type { Language } from '../src/types/settings';
@@ -15,16 +16,24 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [language, setLanguage] = useState<Language>('tl');
-  const [snoozeDuration, setSnoozeDuration] = useState(5);
-  const [snoozeInput, setSnoozeInput] = useState('5');
+  const [snoozeInput, setSnoozeInput] = useState(String(DEFAULT_SNOOZE_DURATION));
+  const snoozeInputRef = useRef(String(DEFAULT_SNOOZE_DURATION));
+  const snoozeDurationRef = useRef(DEFAULT_SNOOZE_DURATION);
 
   useFocusEffect(
     useCallback(() => {
       getSettings().then((s) => {
         setLanguage(s.language);
-        setSnoozeDuration(s.snoozeDuration);
         setSnoozeInput(String(s.snoozeDuration));
+        snoozeInputRef.current = String(s.snoozeDuration);
+        snoozeDurationRef.current = s.snoozeDuration;
       });
+
+      return () => {
+        const parsed = parseInt(snoozeInputRef.current, 10);
+        const minutes = isNaN(parsed) || parsed < 1 ? snoozeDurationRef.current : parsed;
+        getSettings().then((s) => saveSettings({ ...s, snoozeDuration: minutes }));
+      };
     }, []),
   );
 
@@ -36,10 +45,11 @@ export default function SettingsScreen() {
   };
 
   const handleSnoozeBlur = async () => {
-    const parsed = parseInt(snoozeInput, 10);
-    const minutes = isNaN(parsed) || parsed < 1 ? snoozeDuration : parsed;
+    const parsed = parseInt(snoozeInputRef.current, 10);
+    const minutes = isNaN(parsed) || parsed < 1 ? snoozeDurationRef.current : parsed;
+    snoozeInputRef.current = String(minutes);
+    snoozeDurationRef.current = minutes;
     setSnoozeInput(String(minutes));
-    setSnoozeDuration(minutes);
     const settings = await getSettings();
     await saveSettings({ ...settings, snoozeDuration: minutes });
   };
@@ -86,7 +96,11 @@ export default function SettingsScreen() {
           <TextInput
             style={styles.snoozeInput}
             value={snoozeInput}
-            onChangeText={(v) => setSnoozeInput(v.replace(/[^0-9]/g, ''))}
+            onChangeText={(v) => {
+                const clean = v.replace(/[^0-9]/g, '');
+                snoozeInputRef.current = clean;
+                setSnoozeInput(clean);
+              }}
             onBlur={handleSnoozeBlur}
             keyboardType="number-pad"
             maxLength={3}

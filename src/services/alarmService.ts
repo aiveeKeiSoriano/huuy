@@ -34,6 +34,23 @@ export function notifyAlarmReady(): void {
   }
 }
 
+export async function canUseFullScreenIntent(): Promise<boolean> {
+  try {
+    return await AlarmModule.canUseFullScreenIntent();
+  } catch (err) {
+    log.error('canUseFullScreenIntent failed', err);
+    return true;
+  }
+}
+
+export function openFullScreenIntentSettings(): void {
+  try {
+    AlarmModule.openFullScreenIntentSettings();
+  } catch (err) {
+    log.error('openFullScreenIntentSettings failed', err);
+  }
+}
+
 export function goHome(): void {
   log.info('goHome');
   try {

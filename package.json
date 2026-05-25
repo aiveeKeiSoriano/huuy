@@ -12,7 +12,10 @@
     "lint:fix": "eslint \"**/*.{ts,tsx}\" --fix",
     "type-check": "tsc --noEmit",
     "test": "jest",
-    "test:watch": "jest --watchAll"
+    "test:watch": "jest --watchAll",
+    "build:preview": "eas build -p android --profile preview",
+    "build:dev": "eas build -p android --profile development",
+    "build:prod": "eas build -p android --profile production"
   },
   "jest": {
     "preset": "jest-expo",

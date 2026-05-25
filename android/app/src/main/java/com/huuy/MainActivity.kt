@@ -1,5 +1,6 @@
 package com.huuy
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 
@@ -12,11 +13,22 @@ import expo.modules.ReactActivityDelegateWrapper
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
-    // Set the theme to AppTheme BEFORE onCreate to support
-    // coloring the background, status bar, and navigation bar.
-    // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
+    applyAlarmWindowFlagsIfNeeded(intent)
     super.onCreate(null)
+  }
+
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    applyAlarmWindowFlagsIfNeeded(intent)
+  }
+
+  private fun applyAlarmWindowFlagsIfNeeded(intent: Intent?) {
+    if (intent?.data?.toString()?.startsWith(ALARM_DEEP_LINK_BASE) != true) return
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true)
+      setTurnScreenOn(true)
+    }
   }
 
   /**

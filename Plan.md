@@ -87,6 +87,8 @@ Permissions in `android/app/src/main/AndroidManifest.xml`:
 
 > **Android 14+ (API 34) note:** `SCHEDULE_EXACT_ALARM` is no longer automatically granted on Android 14+. On first alarm creation, check `AlarmManager.canScheduleExactAlarms()`. If it returns `false`, redirect the user to the system settings page via `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` so they can grant it manually. Without this grant, `setAlarmClock()` will throw a `SecurityException` and alarm creation will fail silently.
 
+> **Permission gate (planned — step 20):** `POST_NOTIFICATIONS` and `USE_FULL_SCREEN_INTENT` are both required for the app to function. Both will eventually gate app access: if either is missing on launch the app shows a blocking permission screen instead of the main UI, and re-checks on every return from Settings. Currently a soft Alert is shown as a stop-gap for `USE_FULL_SCREEN_INTENT`; step 20 replaces it with the full blocking gate for both permissions.
+
 ### Step 5 — Set Up Assets
 
 All assets live in `src/assets/`.
@@ -634,10 +636,22 @@ Huuy/
 - [x] 13. `app/create.tsx` — "remind mo nga sakin yung:" input, native time picker, `source` param handling, all three save validations; requires actions from steps 9–10
 - [x] 14. `AlarmReceiver.kt` — catches the broadcast when alarm fires; refactored into `checkPermissions()`, `setupChannel()`, `postNotification()` private methods
 - [x] 15. `AlarmActivity.kt` — wakes screen, handles locked/unlocked via window flags, launches deep link; `pendingAlarmActivity` uses `WeakReference` to prevent Activity memory leaks
-- [ ] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
+- [x] 16. `app/alarm.tsx` — logo loading state, null error state, "huuuyyyy yung ano" label, title, `snooze.svg` and `trash.svg` buttons; call `BackHandler.exitApp()` after awaiting snooze or trash action
 - [ ] 17. `BootReceiver.kt` — reschedule on device restart
 - [ ] 18. `app/settings.tsx` — snooze duration config
 - [ ] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/` — home screen widget, build last
+- [ ] 20. **Permission gate** — block app access until both `POST_NOTIFICATIONS` (Android 13+) and `USE_FULL_SCREEN_INTENT` (Android 14+) are granted; shown on every launch as long as either permission is missing; app must not render the main screen until both are confirmed
+  - Check both permissions during `useAppReady` init (after `requestNotificationPermission` runs)
+  - Return a `missingPermissions` list from `useAppReady`
+  - In `_layout.tsx`, render a dedicated full-screen "permission required" screen instead of the `<Stack>` when any permission is missing (not a modal/alert — a blocking wall)
+  - The permission screen explains why each permission is needed and provides a button that opens the relevant system settings page: `Settings.ACTION_APP_NOTIFICATION_SETTINGS` for `POST_NOTIFICATIONS`, `Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT` for `USE_FULL_SCREEN_INTENT`
+  - On `AppState` change from `background` → `active`, re-check permissions so the gate clears immediately when the user returns from Settings without needing a full restart
+  - Remove the soft Alert added in the screen wake fix (it was a stop-gap); this step replaces it
+- [ ] 21. **SCHEDULE_EXACT_ALARM permission recovery (Android 12)** — when `scheduleAlarm` rejects with `PERMISSION_DENIED`, the error currently surfaces as the generic `errors.scheduleAlarm` message with no further guidance; this only affects Android 12 users who have manually revoked the permission (Android 13+ is unaffected — `USE_EXACT_ALARM` is auto-granted from the manifest)
+  - Add `openExactAlarmSettings()` to `AlarmModule.kt` — fires `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` with the app package URI, same pattern as `openFullScreenIntentSettings()`
+  - Expose it via `alarmService.ts`
+  - In `createReminderAction.ts` and `editReminderAction.ts`, catch the `PERMISSION_DENIED` error code specifically and return a distinct `Result` error key (e.g. `ERRORS.EXACT_ALARM_PERMISSION`)
+  - In `app/create.tsx`, detect that error key and show a persistent toast with a button that calls `openExactAlarmSettings()` so the user can go directly to the relevant Settings page
 
 ---
 

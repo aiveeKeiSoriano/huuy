@@ -1,12 +1,15 @@
 package com.huuy
 
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -55,6 +58,27 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
         Log.d(TAG, "cancelAlarm called — id=$id")
         alarmManager.cancel(buildPendingIntent(id))
         Log.d(TAG, "cancelAlarm done — id=$id")
+    }
+
+    @ReactMethod
+    fun canUseFullScreenIntent(promise: Promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val nm = reactContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            promise.resolve(nm.canUseFullScreenIntent())
+        } else {
+            promise.resolve(true)
+        }
+    }
+
+    @ReactMethod
+    fun openFullScreenIntentSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                data = Uri.parse("package:${reactContext.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            reactContext.startActivity(intent)
+        }
     }
 
     @ReactMethod
