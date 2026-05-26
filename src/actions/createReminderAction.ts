@@ -1,12 +1,16 @@
 import uuid from 'react-native-uuid';
 
 import { saveReminder, deleteReminder } from '../services/storageService';
-import { scheduleAlarm, saveAlarmForBoot } from '../services/alarmService';
+import { scheduleAlarm, saveAlarmForBoot, canScheduleExactAlarms } from '../services/alarmService';
 import type { Result } from '../types/result';
 import { ERRORS } from '../constants';
 import i18n from '../i18n';
 
 export async function createReminderAction(title: string, triggerTime: number): Promise<Result> {
+  if (!(await canScheduleExactAlarms())) {
+    return { success: false, error: ERRORS.EXACT_ALARM_PERMISSION };
+  }
+
   const reminder = {
     id: uuid.v4() as string,
     title,

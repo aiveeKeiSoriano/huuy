@@ -71,6 +71,15 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
     }
 
     @ReactMethod
+    fun canScheduleExactAlarms(promise: Promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            promise.resolve(alarmManager.canScheduleExactAlarms())
+        } else {
+            promise.resolve(true)
+        }
+    }
+
+    @ReactMethod
     fun openExactAlarmSettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {

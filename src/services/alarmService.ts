@@ -34,6 +34,15 @@ export function notifyAlarmReady(): void {
   }
 }
 
+export async function canScheduleExactAlarms(): Promise<boolean> {
+  try {
+    return await AlarmModule.canScheduleExactAlarms();
+  } catch (err) {
+    log.error('canScheduleExactAlarms failed', err);
+    return true;
+  }
+}
+
 export async function canUseFullScreenIntent(): Promise<boolean> {
   try {
     return await AlarmModule.canUseFullScreenIntent();

@@ -1,11 +1,15 @@
 import { getReminderById, saveReminder } from '../services/storageService';
-import { cancelAlarm, scheduleAlarm, saveAlarmForBoot } from '../services/alarmService';
+import { cancelAlarm, scheduleAlarm, saveAlarmForBoot, canScheduleExactAlarms } from '../services/alarmService';
 import type { Result } from '../types/result';
 import { ERRORS } from '../constants';
 import i18n from '../i18n';
 
 export async function editReminderAction(id: string, title: string, triggerTime: number): Promise<Result> {
   try {
+    if (!(await canScheduleExactAlarms())) {
+      return { success: false, error: ERRORS.EXACT_ALARM_PERMISSION };
+    }
+
     const existing = await getReminderById(id);
     if (!existing) return { success: false, error: i18n.t('errors.reminderNotFound') };
 

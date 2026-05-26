@@ -652,11 +652,11 @@ Huuy/
   - Expose it via `alarmService.ts`
   - In `createReminderAction.ts` and `editReminderAction.ts`, catch the `PERMISSION_DENIED` error code specifically and return a distinct `Result` error key (e.g. `ERRORS.EXACT_ALARM_PERMISSION`)
   - In `app/create.tsx`, detect that error key and show an Alert dialog with cancel + "open settings" buttons calling `openExactAlarmSettings()`
-- [ ] 22. **`editReminderAction` exact alarm pre-check** — currently the action cancels the old alarm and saves updated data to SQLite before calling `scheduleAlarm`; if `scheduleAlarm` then rejects with `PERMISSION_DENIED`, the reminder is left in SQLite with no active alarm — it will silently become a missed alarm when the time passes
+- [x] 22. **`editReminderAction` exact alarm pre-check** — currently the action cancels the old alarm and saves updated data to SQLite before calling `scheduleAlarm`; if `scheduleAlarm` then rejects with `PERMISSION_DENIED`, the reminder is left in SQLite with no active alarm — it will silently become a missed alarm when the time passes
   - Call `AlarmModule.canScheduleExactAlarms()` (or expose a JS-side check via `alarmService.ts`) at the top of `editReminderAction`, before `cancelAlarm` or `saveReminder`
   - If the check returns `false`, return `{ success: false, error: ERRORS.EXACT_ALARM_PERMISSION }` immediately — no state has changed yet
   - Apply the same pre-check to `createReminderAction` for consistency, before `saveReminder` is called
-- [ ] 23. **Action unit tests** — mock both services, assert coordination order and data passed between them
+- [x] 23. **Action unit tests** — mock both services, assert coordination order and data passed between them
   - `loadRemindersAction` — `markMissedAlarms` called before `getReminders`; result returned correctly
   - `createReminderAction` — UUID generated; `saveReminder` then `scheduleAlarm` called with correct args; rollback (`deleteReminder`) called if `scheduleAlarm` throws; `ERRORS.EXACT_ALARM_PERMISSION` returned on `PERMISSION_DENIED`
   - `editReminderAction` — aborts when `getReminderById` returns null; `cancelAlarm` before `scheduleAlarm`; `missedAlarm: false` passed to `saveReminder`; `ERRORS.EXACT_ALARM_PERMISSION` returned on `PERMISSION_DENIED`
