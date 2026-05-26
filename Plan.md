@@ -647,11 +647,25 @@ Huuy/
   - The permission screen explains why each permission is needed and provides a button that opens the relevant system settings page: `Settings.ACTION_APP_NOTIFICATION_SETTINGS` for `POST_NOTIFICATIONS`, `Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT` for `USE_FULL_SCREEN_INTENT`
   - On `AppState` change from `background` → `active`, re-check permissions so the gate clears immediately when the user returns from Settings without needing a full restart
   - Remove the soft Alert added in the screen wake fix (it was a stop-gap); this step replaces it
-- [ ] 21. **SCHEDULE_EXACT_ALARM permission recovery (Android 12)** — when `scheduleAlarm` rejects with `PERMISSION_DENIED`, the error currently surfaces as the generic `errors.scheduleAlarm` message with no further guidance; this only affects Android 12 users who have manually revoked the permission (Android 13+ is unaffected — `USE_EXACT_ALARM` is auto-granted from the manifest)
+- [x] 21. **SCHEDULE_EXACT_ALARM permission recovery (Android 12)** — when `scheduleAlarm` rejects with `PERMISSION_DENIED`, the error currently surfaces as the generic `errors.scheduleAlarm` message with no further guidance; this only affects Android 12 users who have manually revoked the permission (Android 13+ is unaffected — `USE_EXACT_ALARM` is auto-granted from the manifest)
   - Add `openExactAlarmSettings()` to `AlarmModule.kt` — fires `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` with the app package URI, same pattern as `openFullScreenIntentSettings()`
   - Expose it via `alarmService.ts`
   - In `createReminderAction.ts` and `editReminderAction.ts`, catch the `PERMISSION_DENIED` error code specifically and return a distinct `Result` error key (e.g. `ERRORS.EXACT_ALARM_PERMISSION`)
-  - In `app/create.tsx`, detect that error key and show a persistent toast with a button that calls `openExactAlarmSettings()` so the user can go directly to the relevant Settings page
+  - In `app/create.tsx`, detect that error key and show an Alert dialog with cancel + "open settings" buttons calling `openExactAlarmSettings()`
+- [ ] 22. **`editReminderAction` exact alarm pre-check** — currently the action cancels the old alarm and saves updated data to SQLite before calling `scheduleAlarm`; if `scheduleAlarm` then rejects with `PERMISSION_DENIED`, the reminder is left in SQLite with no active alarm — it will silently become a missed alarm when the time passes
+  - Call `AlarmModule.canScheduleExactAlarms()` (or expose a JS-side check via `alarmService.ts`) at the top of `editReminderAction`, before `cancelAlarm` or `saveReminder`
+  - If the check returns `false`, return `{ success: false, error: ERRORS.EXACT_ALARM_PERMISSION }` immediately — no state has changed yet
+  - Apply the same pre-check to `createReminderAction` for consistency, before `saveReminder` is called
+- [ ] 23. **Action unit tests** — mock both services, assert coordination order and data passed between them
+  - `loadRemindersAction` — `markMissedAlarms` called before `getReminders`; result returned correctly
+  - `createReminderAction` — UUID generated; `saveReminder` then `scheduleAlarm` called with correct args; rollback (`deleteReminder`) called if `scheduleAlarm` throws; `ERRORS.EXACT_ALARM_PERMISSION` returned on `PERMISSION_DENIED`
+  - `editReminderAction` — aborts when `getReminderById` returns null; `cancelAlarm` before `scheduleAlarm`; `missedAlarm: false` passed to `saveReminder`; `ERRORS.EXACT_ALARM_PERMISSION` returned on `PERMISSION_DENIED`
+  - `deleteReminderAction` — `cancelAlarm` called before `deleteReminder`; `removeAlarmForBoot` called
+  - `snoozeReminderAction` — reads `snoozeDuration` from settings; new trigger time = `Date.now() + duration * 60000`; `cancelAlarm` before `scheduleAlarm`
+- [ ] 24. **Production build verification** — before Play Store submission, confirm the build is correct end-to-end
+  - Verify `reactNativeArchitectures` in `android/gradle.properties` still includes all four ABI targets (`armeabi-v7a,arm64-v8a,x86,x86_64`) — the `preview` profile overrides this to `arm64-v8a` only, but `production` must not
+  - Run `eas build --profile production` and confirm the output APK/AAB installs and alarms fire correctly on a real device
+  - Test the full alarm flow end-to-end: create → alarm fires on lock screen → snooze → alarm fires again → delete
 
 ---
 

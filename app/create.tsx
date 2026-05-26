@@ -16,13 +16,16 @@ import { Text } from "../src/components/Text";
 import { ArrowLeftIcon } from "../src/components/Icons";
 import { useToast } from "../src/components/Toast";
 import { getReminderById, getReminders } from "../src/services/storageService";
+import { useAlert } from "../src/components/Alert";
 import { createReminderAction } from "../src/actions/createReminderAction";
 import { editReminderAction } from "../src/actions/editReminderAction";
+import { openExactAlarmSettings } from "../src/services/alarmService";
 import { colors, spacing, radii, fonts } from "../src/theme";
 import {
   MIN_REMINDER_LEAD_MS,
   DEFAULT_REMINDER_LEAD_MS,
   REMINDER_CONFLICT_WINDOW_MS,
+  ERRORS,
   minLeadLabel,
 } from "../src/constants";
 
@@ -63,6 +66,7 @@ export default function CreateScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
   const { toast, showToast } = useToast();
+  const { alert, showAlert } = useAlert();
 
   const onReminderLoaded = useCallback(
     (reminder: Reminder | null) => {
@@ -141,7 +145,14 @@ export default function CreateScreen() {
     setSaving(false);
 
     if (!result.success) {
-      showToast(result.error, { persistent: true });
+      if (result.error === ERRORS.EXACT_ALARM_PERMISSION) {
+        showAlert(t('errors.exactAlarmPermission'), [
+          { label: t('cancel'), style: 'cancel' },
+          { label: t('permissions.openSettings'), onPress: openExactAlarmSettings },
+        ]);
+      } else {
+        showToast(result.error, { persistent: true });
+      }
       return;
     }
 
@@ -191,6 +202,7 @@ export default function CreateScreen() {
         {timeError ? <Text style={styles.error}>{timeError}</Text> : null}
 
         {toast}
+        {alert}
       </View>
 
       <TouchableOpacity

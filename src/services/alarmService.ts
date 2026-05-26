@@ -43,6 +43,14 @@ export async function canUseFullScreenIntent(): Promise<boolean> {
   }
 }
 
+export function openExactAlarmSettings(): void {
+  try {
+    AlarmModule.openExactAlarmSettings();
+  } catch (err) {
+    log.error('openExactAlarmSettings failed', err);
+  }
+}
+
 export function openFullScreenIntentSettings(): void {
   try {
     AlarmModule.openFullScreenIntentSettings();

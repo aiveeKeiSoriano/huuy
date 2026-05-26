@@ -1,4 +1,8 @@
 export const DEFAULT_SNOOZE_DURATION = 5;
+
+export const ERRORS = {
+  EXACT_ALARM_PERMISSION: 'EXACT_ALARM_PERMISSION',
+} as const;
 export const DEEP_LINK_SCHEME = 'huuy';
 export const MIN_REMINDER_LEAD_MS = 0.1 * 60_000;
 export const DEFAULT_REMINDER_LEAD_MS = 1 * 60_000;

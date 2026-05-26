@@ -71,6 +71,17 @@ class AlarmModule(private val reactContext: ReactApplicationContext) : ReactCont
     }
 
     @ReactMethod
+    fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                data = Uri.parse("package:${reactContext.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            reactContext.startActivity(intent)
+        }
+    }
+
+    @ReactMethod
     fun openFullScreenIntentSettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {

@@ -1,6 +1,7 @@
 import { getReminderById, saveReminder } from '../services/storageService';
 import { cancelAlarm, scheduleAlarm, saveAlarmForBoot } from '../services/alarmService';
 import type { Result } from '../types/result';
+import { ERRORS } from '../constants';
 import i18n from '../i18n';
 
 export async function editReminderAction(id: string, title: string, triggerTime: number): Promise<Result> {
@@ -13,7 +14,10 @@ export async function editReminderAction(id: string, title: string, triggerTime:
     await scheduleAlarm({ id, title, triggerTime, missedAlarm: false }, i18n.t('notificationTitle'));
     saveAlarmForBoot(id, triggerTime, title, i18n.t('notificationTitle'));
     return { success: true, data: undefined };
-  } catch {
+  } catch (err: unknown) {
+    if ((err as { code?: string })?.code === 'PERMISSION_DENIED') {
+      return { success: false, error: ERRORS.EXACT_ALARM_PERMISSION };
+    }
     return { success: false, error: i18n.t('errors.editReminder') };
   }
 }

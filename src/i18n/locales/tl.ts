@@ -36,6 +36,7 @@ export default {
     loadReminders: 'failed to load reminders',
     createReminder: 'failed to create reminder',
     scheduleAlarm: 'failed to schedule alarm',
+    exactAlarmPermission: 'Huuy needs permission to schedule alarms.',
     editReminder: 'failed to edit reminder',
     deleteReminder: 'failed to delete reminder',
     snoozeReminder: 'failed to snooze reminder',
