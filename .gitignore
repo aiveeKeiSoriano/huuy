@@ -1,0 +1,20 @@
+# Monorepo root ignores
+
+# Build outputs
+builds/
+
+# Environment
+.env
+.env*.local
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.claude/
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
