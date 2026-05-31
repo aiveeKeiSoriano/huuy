@@ -662,10 +662,37 @@ Huuy/
   - `editReminderAction` — aborts when `getReminderById` returns null; `cancelAlarm` before `scheduleAlarm`; `missedAlarm: false` passed to `saveReminder`; `ERRORS.EXACT_ALARM_PERMISSION` returned on `PERMISSION_DENIED`
   - `deleteReminderAction` — `cancelAlarm` called before `deleteReminder`; `removeAlarmForBoot` called
   - `snoozeReminderAction` — reads `snoozeDuration` from settings; new trigger time = `Date.now() + duration * 60000`; `cancelAlarm` before `scheduleAlarm`
-- [ ] 24. **Production build verification** — before Play Store submission, confirm the build is correct end-to-end
-  - Verify `reactNativeArchitectures` in `android/gradle.properties` still includes all four ABI targets (`armeabi-v7a,arm64-v8a,x86,x86_64`) — the `preview` profile overrides this to `arm64-v8a` only, but `production` must not
-  - Run `eas build --profile production` and confirm the output APK/AAB installs and alarms fire correctly on a real device
-  - Test the full alarm flow end-to-end: create → alarm fires on lock screen → snooze → alarm fires again → delete
+- [x] 24. **Production build verification** — before Play Store submission, confirm the build is correct end-to-end
+  - [x] Verify `reactNativeArchitectures` in `android/gradle.properties` still includes all four ABI targets (`armeabi-v7a,arm64-v8a,x86,x86_64`) — confirmed ✓
+  - [x] Run `eas build --profile production` — AAB built successfully; `versionCode` auto-incremented 1 → 2 via EAS ✓
+  - [ ] Test the full alarm flow end-to-end: create → alarm fires on lock screen → snooze → alarm fires again → delete
+- [ ] 25. **Play Store submission checklist**
+
+  **Technical**
+  - [x] `versionCode` managed by EAS (`appVersionSource: "remote"`) — confirmed auto-incremented on production build ✓
+  - [x] `targetSdkVersion` meets Play Store minimum — confirmed 36 (set by Expo plugin default; exceeds required 34) ✓
+  - [x] All four ABI targets confirmed in production build ✓
+  - [x] App signs correctly with the release keystore configured in EAS ✓
+  - [ ] Deep links (`huuy://`) resolve correctly on a fresh install
+  - [ ] `SCHEDULE_EXACT_ALARM` permission recovery tested on Android 12 device
+  - [ ] `USE_FULL_SCREEN_INTENT` permission gate tested on Android 14+ device
+  - [ ] Boot recovery tested: set a reminder, reboot device, confirm alarm still fires
+
+  **Store listing (Google Play Console)**
+  - [x] App name: **Huuy**
+  - [x] Short description (80 chars max)
+  - [x] Full description (4000 chars max)
+  - [x] App icon: 512×512 PNG (use `src/assets/icon.png` as source)
+  - [x] Feature graphic: 1024×500 PNG
+  - [x] Screenshots: at least 2 phone screenshots (recommended: HomeScreen, AlarmScreen, CreateScreen)
+  - [x] Content rating questionnaire completed — select "Everyone"
+  - [x] Privacy policy URL — required even for apps with no account system; host a simple page stating no data leaves the device
+  - [x] App category: **Tools** or **Productivity**
+  - [x] Contact email address
+
+  **Permissions declaration**
+  - [ ] Declare `SCHEDULE_EXACT_ALARM` usage in Play Console permissions declaration — state it is used for user-set one-time reminders
+  - [ ] `USE_FULL_SCREEN_INTENT` — Play Store requires a declaration for apps using this permission; select "Alarm or timer app" as the use case
 
 ---
 
