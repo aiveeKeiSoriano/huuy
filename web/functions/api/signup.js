@@ -36,7 +36,12 @@ export async function onRequestPost(context) {
     },
   });
 
-  await env.EMAIL.send(new EmailMessage(from, to, stream));
+  try {
+    await env.EMAIL.send(new EmailMessage(from, to, stream));
+  } catch (err) {
+    console.error("Email send failed:", err?.message ?? err);
+    return json({ error: "Failed to send email" }, 500);
+  }
 
   return json({ ok: true }, 200);
 }

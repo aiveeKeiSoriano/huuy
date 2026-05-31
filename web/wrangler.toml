@@ -1,2 +1,10 @@
+name = "huuy"
+main = "src/index.js"
+compatibility_date = "2026-05-27"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+
 [[send_email]]
 name = "EMAIL"
