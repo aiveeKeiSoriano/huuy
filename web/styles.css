@@ -1,0 +1,322 @@
+/* ── Fonts ── */
+@import url("https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;500&display=swap");
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Design tokens (mirrors app/src/theme.ts) ── */
+:root {
+  --color-background: #292831;
+  --color-primary:    #ee8695;
+  --color-secondary:  #4a7a96;
+  --color-tertiary:   #333f58;
+  --color-highlight:  #fbbbad;
+  --font-display:     "Lilita One", serif;
+  --font-body:        "Nunito", sans-serif;
+  --radius-card:      20px;
+  --radius-pill:      9999px;
+}
+
+/* ── Base ── */
+html,
+body {
+  min-height: 100%;
+  background-color: var(--color-background);
+  color: var(--color-highlight);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px 80px;
+}
+
+/* ── Header ── */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--color-primary);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.tagline {
+  font-size: 14px;
+  opacity: 0.5;
+  margin-top: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Card ── */
+.card {
+  background-color: var(--color-tertiary);
+  border-radius: var(--radius-card);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 680px;
+}
+
+/* ── Typography ── */
+h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--color-secondary);
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+}
+
+p { opacity: 0.85; }
+
+hr {
+  border: none;
+  border-top: 2px solid var(--color-background);
+  margin: 32px 0;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+a:hover { border-color: var(--color-primary); }
+
+/* ── Pill ── */
+.pill {
+  display: inline-block;
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  white-space: nowrap;
+}
+
+/* ── Footer ── */
+footer {
+  margin-top: 32px;
+  font-size: 13px;
+  opacity: 0.3;
+  text-align: center;
+}
+
+/* ── Responsive (shared) ── */
+@media (max-width: 520px) {
+  .logo { font-size: 44px; }
+  .card { padding: 28px 20px; }
+}
+
+/* ────────────────────────────────────────
+   Privacy page
+   ──────────────────────────────────────── */
+
+.privacy__updated {
+  font-size: 13px;
+  opacity: 0.45;
+  margin-bottom: 24px;
+}
+
+.privacy section { margin-bottom: 32px; }
+.privacy section:last-child { margin-bottom: 0; }
+
+.privacy ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.privacy li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.privacy li .pill {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.privacy li p { font-size: 15px; }
+
+@media (max-width: 520px) {
+  .privacy li { flex-direction: column; gap: 4px; }
+  .privacy li .pill { margin-top: 0; }
+}
+
+/* ────────────────────────────────────────
+   Join page
+   ──────────────────────────────────────── */
+
+.join__subtitle {
+  opacity: 0.75;
+  margin-bottom: 32px;
+}
+
+.join__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.join label {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.join input[type="email"] {
+  width: 100%;
+  background: var(--color-background);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 12px 20px;
+  color: var(--color-highlight);
+  font-family: var(--font-body);
+  font-size: 16px;
+  transition: border-color 0.15s;
+}
+
+.join input[type="email"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.join input[type="email"]::placeholder {
+  color: var(--color-highlight);
+  opacity: 0.3;
+}
+
+.join__android-note {
+  display: inline-block;
+  background: var(--color-background);
+  color: var(--color-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  margin-bottom: 20px;
+}
+
+.join button[type="submit"] {
+  width: 100%;
+  background: var(--color-primary);
+  color: var(--color-background);
+  font-family: var(--font-display);
+  font-size: 18px;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.15s, opacity 0.15s;
+}
+
+.join button[type="submit"]:hover:not(:disabled) { filter: brightness(1.08); }
+.join button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.join__btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid transparent;
+  border-top-color: var(--color-background);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.join__form-error {
+  color: var(--color-primary);
+  font-size: 14px;
+  margin-top: 12px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.join__beta-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-left: 20px;
+}
+
+.join__beta-notes li {
+  font-size: 13px;
+  color: rgba(251, 187, 173, 0.55);
+  line-height: 1.5;
+}
+
+.join__beta-notes strong {
+  color: var(--color-highlight);
+  font-weight: 700;
+}
+
+.join__note-code {
+  font-family: monospace;
+  font-size: 12px;
+  background: var(--color-background);
+  word-break: break-all;
+}
+
+.join__success-panel {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.join__success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: var(--color-highlight);
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  line-height: 0;
+}
+
+.join__success-panel h2 {
+  font-size: 24px;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+}
+
+.join__success-panel p { opacity: 0.75; }

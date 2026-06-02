@@ -49,6 +49,31 @@
 - [x] 14. `AlarmReceiver.kt` — extracts `reminderId` and `reminderTitle` from Intent extras; creates notification channel `huuy_alarms` with `IMPORTANCE_MAX`, bypass DND, `VISIBILITY_PUBLIC`, and vibration `[0, 400, 200, 400]`; posts a `CATEGORY_ALARM` full-screen notification with title `"Huuuuy yung"` and body set to the reminder's title (falls back to `"huuuyyyy!"` if empty); `fullScreenIntent` points to `AlarmActivity` (direct `startActivity` from a background receiver is blocked on Android 10+); checks `POST_NOTIFICATIONS` on Android 13+, `canUseFullScreenIntent()` on Android 14+; `notificationId()` companion function shared with `AlarmActivity` for cancellation; registered in manifest with `android:exported="true"`; no action buttons — snooze/delete would require native SQLite access and duplicate the JS action logic; dismissed notification is acceptable UX, missed reminders are handled from the app list
 - [x] 15. `AlarmActivity.kt` — `setShowWhenLocked`/`setTurnScreenOn` in `onCreate` (API 27+) + same attributes in manifest as fallback for older APIs; fires `huuy://alarm?reminderId=...` deep link; 5s `Handler` timeout fallback; registers self in `AlarmModule.pendingAlarmActivity`; clears ref and cancels timeout in `onDestroy`; `onDestroy` also cancels the notification via `NotificationManager.cancel(notificationId(reminderId))`; `AlarmModule.notifyAlarmReady()` finishes via `pendingAlarmActivity` (not `currentActivity`) on the main looper
 - [x] 16. `app/alarm.tsx` — loading state (`Loading`), null error state (`ERRORS.REMINDER_GONE` + close button), "huuuyyyy yung ano" label, title, clock, snooze + trash buttons; `notifyAlarmReady()` on mount; `BackHandler` blocks back; `BackHandler.exitApp()` after each action; `SnoozeIcon` added to `Icons.tsx` from `snooze.svg`
-- [ ] 17. `BootReceiver.kt`
-- [ ] 18. `app/settings.tsx` — SettingsScreen
-- [ ] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/`
+- [x] 17. `BootReceiver.kt` — reschedule on device restart; reads from `SharedPreferences`, skips past-due entries (flagged as missed on next app open)
+- [x] 18. `app/settings.tsx` — SettingsScreen; snooze duration config stored in SQLite settings table
+- [x] 19. `WidgetProvider.kt` + widget XML + copy `button.png` to `drawable/` — home screen widget fires `huuy://create?source=widget`
+- [x] 20. **Permission gate** — blocking wall in `_layout.tsx` when `POST_NOTIFICATIONS` (Android 13+) or `USE_FULL_SCREEN_INTENT` (Android 14+) is missing; `useAppReady` returns `missingPermissions` list; re-checks on `AppState` change from background → active; removed stop-gap Alert
+- [x] 21. **SCHEDULE_EXACT_ALARM permission recovery (Android 12)** — `openExactAlarmSettings()` added to `AlarmModule.kt` and `alarmService.ts`; `createReminderAction` and `editReminderAction` return `ERRORS.EXACT_ALARM_PERMISSION` on `PERMISSION_DENIED`; `create.tsx` shows Alert with "open settings" button
+- [x] 22. **`editReminderAction` exact alarm pre-check** — `canScheduleExactAlarms()` checked at top of action before any state change; same pre-check added to `createReminderAction`; returns `ERRORS.EXACT_ALARM_PERMISSION` immediately if false
+- [x] 23. **Action unit tests** — all five actions covered: `loadRemindersAction`, `createReminderAction`, `editReminderAction`, `deleteReminderAction`, `snoozeReminderAction`; services mocked; coordination order and data asserted
+- [x] 24. **Production build verification**
+  - [x] `reactNativeArchitectures` confirmed includes all four ABI targets (`armeabi-v7a,arm64-v8a,x86,x86_64`) ✓
+  - [x] `eas build --profile production` — AAB built; `versionCode` auto-incremented 1 → 2 via EAS ✓
+  - [ ] Full alarm flow end-to-end: create → alarm fires on lock screen → snooze → alarm fires again → delete
+- [ ] 25. **Play Store submission checklist**
+  - **Technical**
+    - [x] `versionCode` managed by EAS (`appVersionSource: "remote"`) ✓
+    - [x] `targetSdkVersion` 36 — meets Play Store minimum ✓
+    - [x] All four ABI targets confirmed in production build ✓
+    - [x] App signs correctly with release keystore via EAS ✓
+    - [ ] Deep links (`huuy://`) resolve correctly on fresh install
+    - [ ] `SCHEDULE_EXACT_ALARM` permission recovery tested on Android 12 device
+    - [ ] `USE_FULL_SCREEN_INTENT` permission gate tested on Android 14+ device
+    - [ ] Boot recovery tested: set reminder → reboot → alarm still fires
+  - **Store listing**
+    - [x] App name, short description, full description ✓
+    - [x] App icon (512×512), feature graphic (1024×500), screenshots ✓
+    - [x] Content rating, privacy policy URL, category, contact email ✓
+  - **Permissions declaration**
+    - [ ] Declare `SCHEDULE_EXACT_ALARM` usage in Play Console
+    - [ ] Declare `USE_FULL_SCREEN_INTENT` usage — select "Alarm or timer app"
