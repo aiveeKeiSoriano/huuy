@@ -1,7 +1,7 @@
-# <img height="40px" alt="logo" src="./web/public/text-logo.png" style="margin-bottom:-10px"> **- an app for your fleeting reminders**
+# <img height="40px" alt="logo" src="./web/public/text-logo.png" valign="middle"> **- an app for your fleeting reminders**
 
-### Now open for Beta Testers! <a href="https://huuy.aiveekei.com/join"><img src="./.github/assets/join-beta.png" height="35" alt="Join the beta" style="margin-bottom: -12px"></a> 
-**For <img width="20px" height="20px" alt="google-playstore" src="./.github/assets/google-playstore.svg" style="margin-bottom: -5px"> <img width="20px" height="20px" alt="android" src="./.github/assets/android.svg" style="margin-bottom: -5px"> only.** 
+### Now open for Beta Testers! <a href="https://huuy.aiveekei.com/join"><img src="./.github/assets/join-beta.png" height="35" alt="Join the beta" valign="middle"></a> 
+**For <img width="20px" height="20px" alt="google-playstore" src="./.github/assets/google-playstore.svg" valign="middle"> <img width="20px" height="20px" alt="android" src="./.github/assets/android.svg" valign="middle"> only.** 
 
 <hr>
 
@@ -17,7 +17,7 @@ And I'll go, _"Yep, I'll remind you."_ Then I'll also forget.
 
 So, I started setting alarms on my phone for her reminders. I'll create an alarm, set a name and time. When another reminder comes from her, I'll create another one or rename an already fired alarm. I end up with a cluttered alarm app, mixed with expired reminders and my actual wake-up alarms and whatnot.
 
-### **The** <img height="20px" alt="logo" src="./web/public/text-logo.png" style="margin-bottom: -5px"> **app**
+### **The** <img height="20px" alt="logo" src="./web/public/text-logo.png" valign="middle"> **app**
 
 This is the reason I created this simple app. A place for my temporary reminders.
 
@@ -68,13 +68,13 @@ No more cluttered app, no more stale alarms. Be reminded once, and be done.
 `🚀⚙️ AND TO THE TECHNICAL STUFF ⚙️🚀`
 
 ## This app is created using:
-- <img width="20px" height="20px" alt="react-native" src="./.github/assets/react.svg" style="margin-bottom: -5px"> **`react native`** as the framework. As react is the web development framework I am most proficient with, choosing react native minimizes the learning curve and lets me focus on building the app rather than learning an entirely new ecosystem.
-- <img width="20px" height="20px" alt="expo" src="./.github/assets/expo.svg" style="margin-bottom: -5px"> **`expo`** on top of react native. Expo provides ready-to-use tools such as routing, sqlite, and expo go for testing. I used expo bare workflow to be able to write my own native modules while still benefiting from their tools.
-- <img width="20px" height="20px" alt="kotlin" src="./.github/assets/kotlin.svg" style="margin-bottom: -5px"> **`kotlin`** is used to write custom alarm native module. RN and expo are great but they are opinionated. In able to create an exact time, top priority alarm app that would not be subjected by Android's battery optimization and background process restrictions, we need direct access to Android's API which Expo doesn't expose.
-- <img width="20px" height="20px" alt="typescript" src="./.github/assets/typescript.svg" style="margin-bottom: -5px">  **`typescript`** as the language. For more robust safety net and verbose error catching.
-- <img width="20px" height="20px" alt="jest" src="./.github/assets/jest.svg" style="margin-bottom: -5px"> **`jest`** for testing the services and actions spicifically in the bridge (Kotlin ↔ RN) and the database layer (SQLite ↔ RN).
-- <img width="20px" height="20px" alt="i18next" src="./.github/assets/i18next.svg" style="margin-bottom: -5px"> **`i18next`** for internationalization. I wanted to use Tagalog as the main language but still make the app accessible to most people so I used i18next to handle the language settings. It would also be easy to add more language in the future.
-- <img width="20px" height="20px" alt="claude" src="./.github/assets/claude.svg" style="margin-bottom: -5px"> **`claude`** for planning and code generation. I extensively use Claude Code in this project to practice using AI for speeding up development. This is one of the main technical goal of this project.
+- <img width="20px" height="20px" alt="react-native" src="./.github/assets/react.svg" valign="middle"> **`react native`** as the framework. As react is the web development framework I am most proficient with, choosing react native minimizes the learning curve and lets me focus on building the app rather than learning an entirely new ecosystem.
+- <img width="20px" height="20px" alt="expo" src="./.github/assets/expo.svg" valign="middle"> **`expo`** on top of react native. Expo provides ready-to-use tools such as routing, sqlite, and expo go for testing. I used expo bare workflow to be able to write my own native modules while still benefiting from their tools.
+- <img width="20px" height="20px" alt="kotlin" src="./.github/assets/kotlin.svg" valign="middle"> **`kotlin`** is used to write custom alarm native module. RN and expo are great but they are opinionated. In able to create an exact time, top priority alarm app that would not be subjected by Android's battery optimization and background process restrictions, we need direct access to Android's API which Expo doesn't expose.
+- <img width="20px" height="20px" alt="typescript" src="./.github/assets/typescript.svg" valign="middle">  **`typescript`** as the language. For more robust safety net and verbose error catching.
+- <img width="20px" height="20px" alt="jest" src="./.github/assets/jest.svg" valign="middle"> **`jest`** for testing the services and actions spicifically in the bridge (Kotlin ↔ RN) and the database layer (SQLite ↔ RN).
+- <img width="20px" height="20px" alt="i18next" src="./.github/assets/i18next.svg" valign="middle"> **`i18next`** for internationalization. I wanted to use Tagalog as the main language but still make the app accessible to most people so I used i18next to handle the language settings. It would also be easy to add more language in the future.
+- <img width="20px" height="20px" alt="claude" src="./.github/assets/claude.svg" valign="middle"> **`claude`** for planning and code generation. I extensively use Claude Code in this project to practice using AI for speeding up development. This is one of the main technical goal of this project.
 
 ## AI in Project 🤖
 As mentioned above, I started this project with the intention of using Claude Code as much as possible. To practice and figure out ***the balance between good development and using AI code generation***.
@@ -86,7 +86,7 @@ Plan.md includes a suggested build order section that I use when building the ap
 ## Deployment
 Another goal for this project is to have an experience putting up an app in the Play Store!
 
-I uploaded this app to the <img width="20px" height="20px" alt="playstore" src="./.github/assets/google-playstore.svg" style="margin-bottom: -5px"> **Google Play Store**. All the assets and information are already set up in the console. And to be considered for production, the app's closed testing requires a minimum of 12 testers who opt in for at least 14 consecutive days.
+I uploaded this app to the <img width="20px" height="20px" alt="playstore" src="./.github/assets/google-playstore.svg" valign="middle"> **Google Play Store**. All the assets and information are already set up in the console. And to be considered for production, the app's closed testing requires a minimum of 12 testers who opt in for at least 14 consecutive days.
 
 <table>
   <tr>
@@ -101,7 +101,7 @@ I uploaded this app to the <img width="20px" height="20px" alt="playstore" src="
 </table>
 
 
-#### Why Android only? <img width="20px" height="20px" alt="android" src="./.github/assets/android.svg" style="margin-bottom: -5px">
+#### Why Android only? <img width="20px" height="20px" alt="android" src="./.github/assets/android.svg" valign="middle">
 Since this app is primarily a personal project, Android was chosen as the sole target platform due to the devices and ecosystem available to me. While iOS support was considered, I currently lack the necessary hardware and environment to thoroughly test and validate the application on iOS devices.
 
 ## Linters
