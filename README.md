@@ -1,6 +1,6 @@
 # <img height="40px" alt="logo" src="./web/public/text-logo.png" valign="middle"> **- an app for your fleeting reminders**
 
-### Now open for Beta Testers! <a href="https://huuy.aiveekei.com/join"><img src="./.github/assets/join-beta.png" height="35" alt="Join the beta" valign="middle"></a> 
+### Now open for Beta Testers! <a href="https://huuy.aiveekei.com/join"><img src="./web/public/join-beta.png" height="35" alt="Join the beta" valign="middle"></a> 
 **For <img width="20px" height="20px" alt="google-playstore" src="./.github/assets/google-playstore.svg" valign="middle"> <img width="20px" height="20px" alt="android" src="./.github/assets/android.svg" valign="middle"> only.** 
 
 <hr>
@@ -29,9 +29,9 @@ No more cluttered app, no more stale alarms. Be reminded once, and be done.
 
 <table>
   <tr>
-    <td align="center"><img src="./Google%20Play%20Assets/home-screen.png" width="100%" alt="home screen"/></td>
-    <td align="center"><img src="./Google%20Play%20Assets/create-screen.png" width="100%" alt="create screen"/></td>
-    <td align="center"><img src="./Google%20Play%20Assets/alarm-screen.png" width="100%" alt="alarm screen"/></td>
+    <td align="center"><img src="./web/public/home-screen.png" width="100%" alt="home screen"/></td>
+    <td align="center"><img src="./web/public/create-screen.png" width="100%" alt="create screen"/></td>
+    <td align="center"><img src="./web/public/alarm-screen.png" width="100%" alt="alarm screen"/></td>
   </tr>
 </table>
 
@@ -43,7 +43,7 @@ No more cluttered app, no more stale alarms. Be reminded once, and be done.
         This is a very personal app for me. That is why it is modeled on the actual words I hear every day, hence the Tagalog language. But don't worry! It is designed to be very intuitive, and you can easily <em><b>change the language</b></em> on the settings page! Currently, there are only 2 language options. If you want to use your own language for the app, feel free to send a pull request for the files in the <a href="app/src/i18n/">i18n folder</a>. I would be happy for any interaction on this app!<br><br><b>Here's little Tagalog lesson for you!</b><br><br> Huuy means "hey!" in Tagalog. The app will take your attention and remind you of the most important things. On an empty screen it says, <em>"Wala lang"</em>. It means "nothing". So, it is like when someone says hey to you but got nothing to say, they'll go "oh nothing, just saying hey."<br><br>On the alarm screen it says, <em>"Huyyyy yung ano, yung..."</em>. It means somethings like, "heeyy the what, the..." or "heeyy that thing, the...". I tried to mimic like the app can't immediately remember what they need to say. 😭
     </td>
     <td width="25%" valign="top">
-        <img src="./.github/assets/settings-screen.png" alt="settings screen" style="width:100%;"/>
+        <img src="./web/public/settings-screen.png" alt="settings screen" style="width:100%;"/>
     </td>
   </tr>
 </table>
@@ -53,12 +53,12 @@ No more cluttered app, no more stale alarms. Be reminded once, and be done.
 <table>
   <tr>
     <td valign="top" width="20%">
-      <img src="./.github/assets/widget-screen.png" alt="widget screen" style="width:100%;"/>
+      <img src="./web/public/widget-screen.png" alt="widget screen" style="width:100%;"/>
     </td>
     <td valign="top" align="left">
         My favorite feature of the app is the widget! Since reminders often come unexpectedly, especially when you're busy and don't have much time to spare, the widget allows you to create a reminder directly from your home screen! Just a click away!
         <br>
-        <img src="./.github/assets/button.png" alt="widget button" style="width:300px;"/>
+        <img src="./web/public/widget-button.png" alt="widget button" style="width:300px;"/>
     </td>
   </tr>
 </table>
@@ -91,11 +91,11 @@ I uploaded this app to the <img width="20px" height="20px" alt="playstore" src="
 <table>
   <tr>
     <td width="50%" valign="top" align="center">
-    <a href="https://huuy.aiveekei.com/join"><img src="./.github/assets/join-beta.png" width="150" alt="Join the beta"></a><br>
+    <a href="https://huuy.aiveekei.com/join"><img src="./web/public/join-beta.png" width="150" alt="Join the beta"></a><br>
       Your participation would be appreciated. 💌
     </td>
     <td width="50%" valign="top" align="center">
-      <a href="https://huuy.aiveekei.com/contact"><img src="./.github/assets/leave-feedback.png" width="150" alt="Leave feedback"></a><br>Any bugs or feedback? You can create an issue, PR, or leave feedback here!
+      <a href="https://huuy.aiveekei.com/contact"><img src="./web/public/leave-feedback.png" width="150" alt="Leave feedback"></a><br>Any bugs or feedback? You can create an issue, PR, or leave feedback here!
     </td>
   </tr>
 </table>
