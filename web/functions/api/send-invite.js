@@ -37,16 +37,16 @@ export async function onRequestPost(context) {
         Thanks for joining the Huuy closed beta. Huuy is a simple one-time reminder alarm —
         no accounts, no clutter, just a single reminder for your temporary thoughts. Remembered and trashed.
       </p>
-      <a href="${PLAY_STORE_LINK}" style="display:inline-block;border:none;">
-        <img src="https://huuy.aiveekei.com/public/install-from-gps.png" alt="Install on Google Play" width="180" style="display:block;" />
+      <a href="${PLAY_STORE_LINK}" style="display:block;border:none;text-align:center;">
+        <img src="https://huuy.aiveekei.com/public/install-from-gps.png" alt="Install on Google Play" width="300" style="display:block;margin:0 auto;" />
       </a>
       <p style="font-size:12px;margin:16px 0 0;line-height:1.6;color:#fbbbad;opacity:0.8;">
         Or copy this link to your browser:<br />
-        <span style="word-break:break-all;color:#ee8695;">${PLAY_STORE_LINK}</span>
+        <a href="${PLAY_STORE_LINK}" style="word-break:break-all;color:#ee8695;text-decoration:none;">${PLAY_STORE_LINK}</a>
       </p>
       <hr style="border:none;border-top:1px solid rgba(251,187,173,0.15);margin:24px 0;" />
       <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.85;">
-        Make sure you are signed in to your browser using <strong style="color:#fbbbad;opacity:1;">${email}</strong> before opening the link.
+        Make sure you are signed in to your browser using <a href="mailto:${email}" style="color:#ee8695;text-decoration:none;">${email}</a> before opening the link.
       </p>
       <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.85;">
         Once you install, you must stay opted in to the closed test for at least
