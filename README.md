@@ -52,8 +52,8 @@ No more cluttered app, no more stale alarms. Be reminded once, and be done.
 
 <table>
   <tr>
-    <td valign="top" width="20%">
-      <img src="./web/public/widget-screen.png" alt="widget screen" style="width:100%;"/>
+    <td valign="top" width="25%">
+      <img src="./.github/assets/widget-screen.png" alt="widget screen" style="width:100%;"/>
     </td>
     <td valign="top" align="left">
         My favorite feature of the app is the widget! Since reminders often come unexpectedly, especially when you're busy and don't have much time to spare, the widget allows you to create a reminder directly from your home screen! Just a click away!

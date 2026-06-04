@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Huuy — an app for your fleeting reminders</title>
+    <meta name="description" content="Huuy is a free Android reminder app with no accounts and no clutter. Set a one-time reminder, get notified, and trash it. Simple as that." />
+    <meta name="theme-color" content="#292831" />
+
+    <link rel="canonical" href="https://huuy.aiveekei.com/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;500&display=swap" />
+    <link rel="preload" as="image" href="public/create-screen.webp" type="image/webp" fetchpriority="high" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://huuy.aiveekei.com/" />
+    <meta property="og:site_name" content="Huuy" />
+    <meta property="og:title" content="Huuy — an app for your fleeting reminders" />
+    <meta property="og:description" content="Huuy is a free Android reminder app with no accounts and no clutter. Set a one-time reminder, get notified, and trash it. Simple as that." />
+    <meta property="og:image" content="https://huuy.aiveekei.com/public/home-screen.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Huuy — an app for your fleeting reminders" />
+    <meta name="twitter:description" content="Huuy is a free Android reminder app with no accounts and no clutter. Set a one-time reminder, get notified, and trash it. Simple as that." />
+    <meta name="twitter:image" content="https://huuy.aiveekei.com/public/home-screen.png" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MobileApplication",
+      "name": "Huuy",
+      "description": "Huuy is a free Android reminder app with no accounts and no clutter. Set a one-time reminder, get notified, and trash it. Simple as that.",
+      "operatingSystem": "Android",
+      "applicationCategory": "UtilitiesApplication",
+      "url": "https://huuy.aiveekei.com/",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <main class="landing">
+
+      <!-- Hero -->
+      <section class="landing__hero">
+        <div class="landing__hero-text">
+          <div class="logo landing__logo">huuy</div>
+          <h1 class="landing__headline">An app for your<br>fleeting reminders.</h1>
+          <p class="landing__sub">
+            No accounts, no clutter, just a single reminder for your temporary
+            thoughts. Remembered and trashed.
+          </p>
+          <div class="landing__cta">
+            <a href="/join" class="landing__btn">Join the Beta</a>
+            <span class="pill">Android only</span>
+          </div>
+        </div>
+        <div class="landing__hero-screenshots">
+          <picture>
+            <source srcset="public/home-screen.avif" type="image/avif" />
+            <source srcset="public/home-screen.webp" type="image/webp" />
+            <img src="public/home-screen.png" alt="Huuy app home screen showing the reminder list" width="500" height="1115" fetchpriority="high" />
+          </picture>
+          <picture>
+            <source srcset="public/create-screen.avif" type="image/avif" />
+            <source srcset="public/create-screen.webp" type="image/webp" />
+            <img src="public/create-screen.png" alt="Huuy app create reminder screen" class="landing__hero-screenshot--center" width="500" height="1115" fetchpriority="high" />
+          </picture>
+          <picture>
+            <source srcset="public/alarm-screen.avif" type="image/avif" />
+            <source srcset="public/alarm-screen.webp" type="image/webp" />
+            <img src="public/alarm-screen.png" alt="Huuy app alarm screen firing a reminder" width="500" height="1115" fetchpriority="high" />
+          </picture>
+        </div>
+      </section>
+
+      <!-- Story -->
+      <section class="card landing__story">
+        <p>
+          I have this very important person in my life who proudly has a poor memory.
+          <em>"I have always been like this,"</em> she says. So, as a very present
+          person in her life, we end up just sharing a single storage of memory (mine).
+        </p>
+        <p>When she needs to remember things like chores or errands, she'll look at me and say:</p>
+        <blockquote class="landing__quote">
+          "Remind me that I need to buy dog food later."<br>
+          "Remind me that I need to withdraw cash after work."<br>
+          <em>And pick up the laundry. Buy rice. Buy meds. Buy water. Call the vet. Message my boss.</em>
+        </blockquote>
+        <p>And I'll go, <em>"Yep, I'll remind you."</em> Then I'll also forget.</p>
+        <p>
+          So, I started setting alarms on my phone for her reminders. I'll create an alarm,
+          set a name and time. When another reminder comes from her, I'll create another one
+          or rename an already fired alarm. I end up with a cluttered alarm app, mixed with
+          expired reminders and my actual wake-up alarms and whatnot.
+        </p>
+        <p>This is the reason I created this simple app. A place for my temporary reminders.</p>
+      </section>
+
+      <!-- How it works -->
+      <section class="landing__steps">
+        <div class="landing__steps-vline"></div>
+
+        <div class="landing__step landing__step--left">
+          <div class="landing__step-num-side">01.</div>
+          <div class="landing__step-dot-wrap"><div class="landing__step-dot"></div></div>
+          <div class="landing__step-content">
+            <span class="landing__step-emoji">✅</span>
+            <strong>I set a reminder</strong>
+          </div>
+        </div>
+
+        <div class="landing__step landing__step--right">
+          <div class="landing__step-content">
+            <span class="landing__step-emoji">👋</span>
+            <strong>Huuy reminds me</strong>
+          </div>
+          <div class="landing__step-dot-wrap"><div class="landing__step-dot"></div></div>
+          <div class="landing__step-num-side">02.</div>
+        </div>
+
+        <div class="landing__step landing__step--left">
+          <div class="landing__step-num-side">03.</div>
+          <div class="landing__step-dot-wrap"><div class="landing__step-dot"></div></div>
+          <div class="landing__step-content">
+            <span class="landing__step-emoji">✨</span>
+            <strong>I click the trash button</strong>
+          </div>
+        </div>
+      </section>
+      <p class="landing__steps-note">No more cluttered app, no more stale alarms. Be reminded once, and be done.</p>
+
+      <!-- Widget -->
+      <section class="card landing__widget">
+        <div class="landing__widget-content">
+          <div class="landing__widget-text">
+            <h2>The Widget</h2>
+            <p>
+              My favorite feature of the app is the widget! Since reminders often
+              come unexpectedly, especially when you're busy and don't have much time
+              to spare, the widget allows you to create a reminder directly from your
+              home screen! Just a click away!
+            </p>
+            <img src="public/widget-button.png" alt="Huuy home screen widget button for quick reminder creation" class="landing__widget-btn-img" width="2000" height="1000" loading="lazy" />
+          </div>
+          <div class="landing__widget-screenshot-wrap">
+            <picture>
+              <source srcset="public/widget-screen.avif" type="image/avif" />
+              <source srcset="public/widget-screen.webp" type="image/webp" />
+              <img src="public/widget-screen.png" alt="Huuy Android widget on the home screen" class="landing__widget-screenshot" width="500" height="1115" loading="lazy" />
+            </picture>
+          </div>
+        </div>
+      </section>
+
+      <!-- Language -->
+      <section class="card landing__language">
+        <div class="landing__language-content">
+          <div class="landing__settings-screenshot-wrap">
+            <picture>
+              <source srcset="public/settings-screen.avif" type="image/avif" />
+              <source srcset="public/settings-screen.webp" type="image/webp" />
+              <img src="public/settings-screen.png" alt="Huuy app settings screen showing language options" class="landing__settings-screenshot" width="459" height="1024" loading="lazy" />
+            </picture>
+          </div>
+          <div class="landing__language-text">
+            <h2>A little Tagalog lesson for you!</h2>
+            <p>
+              This is a very personal app for me. That is why it is modeled on the actual
+              words I hear every day, hence the Tagalog language. But don't worry! It is
+              designed to be very intuitive, and you can easily <strong>change the language</strong>
+              on the settings page! Currently, there are only 2 language options.
+            </p>
+            <p>
+              <em>Huuy</em> means "hey!" in Tagalog. The app will take your attention and
+              remind you of the most important things. On an empty screen it says,
+              <em>"Wala lang"</em>. It means "nothing". So, it is like when someone says
+              hey to you but got nothing to say, they'll go "oh nothing, just saying hey."
+            </p>
+            <p>
+              On the alarm screen it says, <em>"Huyyyy yung ano, yung…"</em>. It means
+              something like, "heeyy the what, the…" or "heeyy that thing, the…". I tried
+              to mimic like the app can't immediately remember what they need to say. 😭
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Beta CTA -->
+      <section class="card landing__bottom-cta">
+        <h2>Now open for Beta Testers!</h2>
+        <p>
+          To be considered for production, the app's closed testing requires a minimum
+          of <strong>12 testers</strong> who opt in for at least
+          <strong>14 consecutive days</strong>. Your participation would be appreciated. 💌
+        </p>
+        <div class="landing__bottom-actions">
+          <a href="/join">
+            <picture>
+              <source srcset="public/join-beta.avif" type="image/avif" />
+              <source srcset="public/join-beta.webp" type="image/webp" />
+              <img src="public/join-beta.png" alt="Join the Beta" class="landing__action-img" width="734" height="207" loading="lazy" />
+            </picture>
+          </a>
+          <a href="/feedback">
+            <picture>
+              <source srcset="public/leave-feedback.avif" type="image/avif" />
+              <source srcset="public/leave-feedback.webp" type="image/webp" />
+              <img src="public/leave-feedback.png" alt="Leave Feedback" class="landing__action-img" width="734" height="207" loading="lazy" />
+            </picture>
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+    <footer>&copy; 2026 Huuy. All rights reserved.</footer>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MobileApplication",
+      "name": "Huuy",
+      "description": "A free Android app for one-time reminders. No accounts, no clutter — set a reminder, get notified, and trash it.",
+      "operatingSystem": "Android",
+      "applicationCategory": "UtilitiesApplication",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "url": "https://huuy.aiveekei.com"
+    }
+    </script>
+
+    <script>
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('is-visible');
+        });
+      }, { threshold: 0.3 });
+      document.querySelectorAll('.landing__step').forEach(el => observer.observe(el));
+    </script>
+  </body>
+</html>
