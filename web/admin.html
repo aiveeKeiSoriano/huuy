@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — Huuy</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="styles.css" />
+
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
+
+    <meta name="robots" content="noindex, nofollow" />
+
+    <style>
+      .admin__success-banner {
+        margin-bottom: 20px;
+        padding: 12px 20px;
+
+        background: var(--color-secondary);
+        border-radius: var(--radius-pill);
+
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-highlight);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">huuy</div>
+      <div class="tagline">Admin</div>
+    </header>
+
+    <main class="card join">
+      <!-- Step 1: password gate -->
+      <div id="password-gate">
+        <h1>Unlock</h1>
+        <form id="auth-form" novalidate>
+          <div class="join__field" style="margin-bottom: 28px;">
+            <label class="join__label" for="password">Password</label>
+            <input
+              class="join__input"
+              type="password"
+              id="password"
+              name="password"
+              required
+              autocomplete="current-password"
+            />
+          </div>
+
+          <button class="join__btn" type="submit" id="auth-btn">
+            <span class="btn-label">Unlock</span>
+            <span class="join__btn-spinner" hidden aria-hidden="true"></span>
+          </button>
+
+          <p class="join__form-error" role="alert" id="auth-error" hidden>Wrong password.</p>
+        </form>
+      </div>
+
+      <!-- Step 2: invite form (hidden until unlocked) -->
+      <div id="invite-panel" hidden>
+        <h1>Send Invite</h1>
+
+        <div id="success-banner" class="admin__success-banner" hidden></div>
+
+        <form id="invite-form" novalidate>
+          <div class="join__field" style="margin-bottom: 28px;">
+            <label class="join__label" for="email">Tester email</label>
+            <input
+              class="join__input"
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="tester@example.com"
+              autocomplete="off"
+            />
+          </div>
+
+          <button class="join__btn" type="submit" id="invite-btn">
+            <span class="btn-label">Send Invite</span>
+            <span class="join__btn-spinner" hidden aria-hidden="true"></span>
+          </button>
+
+          <p class="join__form-error" role="alert" id="invite-error" hidden></p>
+        </form>
+      </div>
+    </main>
+
+    <footer>&copy; 2026 Huuy. All rights reserved.</footer>
+
+    <script>
+      let storedPassword = '';
+
+      // — Auth form —
+      const authForm = document.getElementById('auth-form');
+      const authBtn = document.getElementById('auth-btn');
+      const authError = document.getElementById('auth-error');
+
+      authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const password = document.getElementById('password').value;
+
+        setLoading(authBtn, true);
+        authError.hidden = true;
+
+        let ok = false;
+        try {
+          const res = await fetch('/api/admin/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+          });
+          ok = res.ok;
+        } catch { /* network error */ }
+
+        setLoading(authBtn, false);
+
+        if (ok) {
+          storedPassword = password;
+          document.getElementById('password-gate').hidden = true;
+          document.getElementById('invite-panel').hidden = false;
+          document.getElementById('email').focus();
+        } else {
+          authError.hidden = false;
+        }
+      });
+
+      // — Invite form —
+      const inviteForm = document.getElementById('invite-form');
+      const inviteBtn = document.getElementById('invite-btn');
+      const inviteError = document.getElementById('invite-error');
+      const successBanner = document.getElementById('success-banner');
+      const emailInput = document.getElementById('email');
+
+      inviteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = emailInput.value.trim();
+
+        setLoading(inviteBtn, true);
+        inviteError.hidden = true;
+        successBanner.hidden = true;
+
+        let result = null;
+        try {
+          const res = await fetch('/api/send-invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ password: storedPassword, email }),
+          });
+          result = { ok: res.ok, status: res.status, data: await res.json().catch(() => ({})) };
+        } catch {
+          result = { ok: false, status: 0, data: {} };
+        }
+
+        setLoading(inviteBtn, false);
+
+        if (result.ok) {
+          successBanner.textContent = `Invite sent to ${email}`;
+          successBanner.hidden = false;
+          emailInput.value = '';
+          emailInput.focus();
+        } else {
+          inviteError.textContent = result.data?.error || 'Something went wrong — please try again.';
+          inviteError.hidden = false;
+        }
+      });
+
+      function setLoading(btn, loading) {
+        btn.disabled = loading;
+        btn.querySelector('.btn-label').hidden = loading;
+        btn.querySelector('.join__btn-spinner').hidden = !loading;
+      }
+    </script>
+  </body>
+</html>
