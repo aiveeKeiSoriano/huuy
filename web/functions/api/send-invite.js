@@ -1,7 +1,8 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  const PLAY_STORE_LINK = "https://play.google.com/store/apps/details?id=com.huuy";
+  const PLAY_STORE_LINK =
+    "https://play.google.com/store/apps/details?id=com.huuy";
   const TESTING_LINK = "https://play.google.com/apps/testing/com.huuy";
 
   let password, email;
@@ -27,7 +28,7 @@ export async function onRequestPost(context) {
 
   const html = `<!DOCTYPE html>
 <html>
-<body style="margin:0;padding:0;background-color:#292831;">
+<body style="margin:0;padding:0;">
   <div style="max-width:520px;margin:0 auto;padding:40px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
     <div style="background-color:#333f58;border-radius:20px;padding:36px 32px;color:#fbbbad;">
       <img src="https://huuy.aiveekei.com/public/text-logo.png" alt="huuy" width="96" style="display:block;margin:0 0 28px;" />
@@ -39,24 +40,24 @@ export async function onRequestPost(context) {
       <a href="${PLAY_STORE_LINK}" style="display:inline-block;border:none;">
         <img src="https://huuy.aiveekei.com/public/install-from-gps.png" alt="Install on Google Play" width="180" style="display:block;" />
       </a>
-      <p style="font-size:12px;margin:16px 0 0;line-height:1.6;color:#fbbbad;opacity:0.5;">
+      <p style="font-size:12px;margin:16px 0 0;line-height:1.6;color:#fbbbad;opacity:0.8;">
         Or copy this link to your browser:<br />
-        <span style="word-break:break-all;">${PLAY_STORE_LINK}</span>
+        <span style="word-break:break-all;color:#ee8695;">${PLAY_STORE_LINK}</span>
       </p>
       <hr style="border:none;border-top:1px solid rgba(251,187,173,0.15);margin:24px 0;" />
-      <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.55;">
+      <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.85;">
         Make sure you are signed in to your browser using <strong style="color:#fbbbad;opacity:1;">${email}</strong> before opening the link.
       </p>
-      <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.55;">
+      <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.85;">
         Once you install, you must stay opted in to the closed test for at least
         <strong style="color:#fbbbad;opacity:1;">14 consecutive days</strong> for your participation to count.
       </p>
-      <p style="font-size:13px;margin:0;line-height:1.6;color:#fbbbad;opacity:0.55;">
+      <p style="font-size:13px;margin:0;line-height:1.6;color:#fbbbad;opacity:0.85;">
         If you'd like to open the app page on the web instead, use this link:<br />
-        <a href="${TESTING_LINK}" style="color:#4a7a96;word-break:break-all;">${TESTING_LINK}</a>
+        <a href="${TESTING_LINK}" style="color:#ee8695;word-break:break-all;">${TESTING_LINK}</a>
       </p>
       <hr style="border:none;border-top:1px solid rgba(251,187,173,0.15);margin:24px 0;" />
-      <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.55;">
+      <p style="font-size:13px;margin:0 0 12px;line-height:1.6;color:#fbbbad;opacity:0.85;">
         Tried the app? We'd love to hear what you think.
       </p>
       <a href="https://huuy.aiveekei.com/feedback.html" style="display:inline-block;border:none;">
